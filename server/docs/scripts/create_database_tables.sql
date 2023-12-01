@@ -1,105 +1,140 @@
-CREATE TABLE `entity` (
-  `id` integer PRIMARY KEY,
-  `is_active` boolean,
-  `created_at` timestamp
+CREATE SCHEMA IF NOT EXISTS community_board;
+
+USE community_board;
+
+CREATE TABLE IF NOT EXISTS entity (
+	id INT NOT NULL UNIQUE AUTO_INCREMENT,
+    is_active BIT(1) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk__entity
+    PRIMARY KEY (id)
 );
 
-CREATE TABLE `affiliate` (
-  `id` integer PRIMARY KEY,
-  `entity_id` integer
+CREATE TABLE IF NOT EXISTS affiliate (
+	id INT NOT NULL UNIQUE AUTO_INCREMENT,
+    entity_id INT NOT NULL UNIQUE,
+    CONSTRAINT pk__affiliate
+    PRIMARY KEY (id),
+    CONSTRAINT fk__affiliate__entity
+    FOREIGN KEY (entity_id)
+    REFERENCES entity (id)
 );
 
-CREATE TABLE `member` (
-  `id` integer PRIMARY KEY,
-  `affiliate_id` integer
+CREATE TABLE IF NOT EXISTS member (
+	id INT NOT NULL UNIQUE AUTO_INCREMENT,
+    affiliate_id INT NOT NULL UNIQUE,
+    CONSTRAINT pk__member
+    PRIMARY KEY (id),
+    CONSTRAINT fk__member__affiliate
+    FOREIGN KEY (affiliate_id)
+    REFERENCES affiliate (id)
 );
 
-CREATE TABLE `member_description` (
-  `member_id` integer,
-  `bio` varchar(255),
-  `fullname` varchar(255),
-  `username` varchar(255),
-  `birthdate` date,
-  `is_private` boolean
+CREATE TABLE IF NOT EXISTS member_description (
+	member_id INT NOT NULL UNIQUE,
+    bio VARCHAR (255),
+    fullname VARCHAR (100),
+    username VARCHAR (30),
+    birthdate DATE NOT NULL,
+    is_private BIT (1) NOT NULL,
+    CONSTRAINT fk__member_description__member
+    FOREIGN KEY (member_id)
+    REFERENCES member (id)
 );
 
-CREATE TABLE `board` (
-  `id` integer PRIMARY KEY,
-  `affiliate_id` integer,
-  `member_id` integer
+CREATE TABLE IF NOT EXISTS member_follow_request (
+	id INT NOT NULL UNIQUE AUTO_INCREMENT,
+    from_member_id INT NOT NULL,
+    to_affiliate_id INT NOT NULL,
+	is_accepted BIT (1) NOT NULL,
+    CONSTRAINT pk__member_follow_request
+    PRIMARY KEY (id),
+    CONSTRAINT fk__member_follow_request__member
+    FOREIGN KEY (from_member_id)
+    REFERENCES member (id),
+    CONSTRAINT fk__member_follow_request__affiliate
+    FOREIGN KEY (to_affiliate_id)
+    REFERENCES affiliate (id)
 );
 
-CREATE TABLE `board_description` (
-  `board_id` integer,
-  `about` varchar(255),
-  `is_private` boolean
+CREATE TABLE IF NOT EXISTS board (
+	id INT NOT NULL UNIQUE AUTO_INCREMENT,
+	affiliate_id INT NOT NULL UNIQUE,
+    from_member_id INT NOT NULL,
+    CONSTRAINT pk__board
+    PRIMARY KEY (id),
+    CONSTRAINT fk__board__member
+    FOREIGN KEY (from_member_id)
+    REFERENCES member (id),
+    CONSTRAINT Ffk__board__affiliate
+    FOREIGN KEY (affiliate_id)
+    REFERENCES affiliate (id)
 );
 
-CREATE TABLE `board_contribution_request` (
-  `id` integer PRIMARY KEY,
-  `entity_id` integer,
-  `from_member_id` integer,
-  `to_board_id` integer,
-  `is_accepted` boolean
+CREATE TABLE IF NOT EXISTS board_description (
+	board_id INT NOT NULL UNIQUE,
+    about VARCHAR (255),
+    is_private BIT (1) NOT NULL,
+    CONSTRAINT fk__board_description__board
+    FOREIGN KEY (board_id)
+    REFERENCES board (id)
 );
 
-CREATE TABLE `member_follow_request` (
-  `id` integer PRIMARY KEY,
-  `entity_id` integer,
-  `from_member_id` integer,
-  `to_member_id` integer,
-  `is_accepted` boolean
+CREATE TABLE IF NOT EXISTS post (
+	id INT NOT NULL UNIQUE AUTO_INCREMENT,
+    entity_id INT NOT NULL UNIQUE,
+    body VARCHAR (255) NOT NULL,
+    CONSTRAINT pk__post
+    PRIMARY KEY (id),
+    CONSTRAINT fk__post__entity
+    FOREIGN KEY (entity_id)
+    REFERENCES entity (id)
 );
 
-CREATE TABLE `post` (
-  `id` integer PRIMARY KEY,
-  `entity_id` integer,
-  `body` varchar(255)
+CREATE TABLE IF NOT EXISTS post_saved (
+	post_id INT NOT NULL,
+    affiliate_id INT NOT NULL,
+    CONSTRAINT fk__post_saved__post
+    FOREIGN KEY (post_id)
+    REFERENCES post (id),
+    CONSTRAINT fk__post_saved__affiliate
+    FOREIGN KEY (affiliate_id)
+    REFERENCES affiliate (id)
 );
 
-CREATE TABLE `post_membership` (
-  `post_id` integer,
-  `affiliate_id` integer
+CREATE TABLE IF NOT EXISTS post_membership (
+	post_id INT NOT NULL,
+    affiliate_id INT NOT NULL,
+    CONSTRAINT fk__post_membership__post
+    FOREIGN KEY (post_id)
+    REFERENCES post (id),
+    CONSTRAINT fk__post_membership__affiliate
+    FOREIGN KEY (affiliate_id)
+    REFERENCES affiliate (id)
 );
 
-CREATE TABLE `post_saved` (
-  `post_id` integer,
-  `affiliate_id` integer
+CREATE TABLE IF NOT EXISTS post_comment (
+	from_post_id INT NOT NULL,
+    to_post_id INT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk__post_comment__post__from
+    FOREIGN KEY (from_post_id)
+    REFERENCES post (id),
+    CONSTRAINT fk__post_comment__post__to
+    FOREIGN KEY (to_post_id)
+    REFERENCES post (id)
 );
 
-CREATE TABLE `post_comment` (
-  `from_post_id` integer,
-  `to_post_id` integer
-);
+DROP TABLE IF EXISTS post_comment;
+DROP TABLE IF EXISTS post_membership;
+DROP TABLE IF EXISTS post_saved;
+DROP TABLE IF EXISTS post;
+DROP TABLE IF EXISTS board_description;
+DROP TABLE IF EXISTS board;
+DROP TABLE IF EXISTS member_follow_request;
+DROP TABLE IF EXISTS member_description;
+DROP TABLE IF EXISTS member;
+DROP TABLE IF EXISTS affiliate;
+DROP TABLE IF EXISTS entity;
 
-ALTER TABLE `affiliate` ADD FOREIGN KEY (`id`) REFERENCES `entity` (`id`);
-
-ALTER TABLE `post` ADD FOREIGN KEY (`entity_id`) REFERENCES `entity` (`id`);
-
-ALTER TABLE `member` ADD FOREIGN KEY (`affiliate_id`) REFERENCES `affiliate` (`id`);
-
-ALTER TABLE `board` ADD FOREIGN KEY (`affiliate_id`) REFERENCES `affiliate` (`id`);
-
-ALTER TABLE `member_description` ADD FOREIGN KEY (`member_id`) REFERENCES `member` (`id`);
-
-ALTER TABLE `board_description` ADD FOREIGN KEY (`board_id`) REFERENCES `board` (`id`);
-
-ALTER TABLE `board_contribution_request` ADD FOREIGN KEY (`from_member_id`) REFERENCES `member` (`id`);
-
-ALTER TABLE `board_contribution_request` ADD FOREIGN KEY (`to_board_id`) REFERENCES `board` (`id`);
-
-ALTER TABLE `member_follow_request` ADD FOREIGN KEY (`from_member_id`) REFERENCES `member` (`id`);
-
-ALTER TABLE `member_follow_request` ADD FOREIGN KEY (`to_member_id`) REFERENCES `member` (`id`);
-
-ALTER TABLE `post_membership` ADD FOREIGN KEY (`post_id`) REFERENCES `post` (`id`);
-
-ALTER TABLE `post_membership` ADD FOREIGN KEY (`affiliate_id`) REFERENCES `affiliate` (`id`);
-
-ALTER TABLE `post_saved` ADD FOREIGN KEY (`post_id`) REFERENCES `post` (`id`);
-
-ALTER TABLE `post_saved` ADD FOREIGN KEY (`affiliate_id`) REFERENCES `affiliate` (`id`);
-
-ALTER TABLE `post_comment` ADD FOREIGN KEY (`from_post_id`) REFERENCES `post` (`id`);
-
-ALTER TABLE `post_comment` ADD FOREIGN KEY (`to_post_id`) REFERENCES `post` (`id`);
+SHOW TABLES;
