@@ -6,12 +6,13 @@ import Helper from '../helper';
 
 enum MemberOperationQuery {
     // Helpers
-    CheckIfUsedUsername = `SELECT id AS member_id FROM member m WHERE m.username = ? LIMIT 1`,
+    CheckIfUsernameMatch = `SELECT id AS member_id FROM member m WHERE m.username = ? LIMIT 1`,
+    CheckIfPasswordMatch = `SELECT * FROM member_auth ma WHERE ma.member_id = ? LIMIT 1`,
 
     // Get
-    GetAllAbbreviated = ``,
+    GetAllAbbreviated = `SELECT m.affiliate_id, md.* FROM member m LEFT JOIN member_description md ON m.id = md.member_id`,
+    GetByIDAbbreviated = `SELECT m.affiliate_id, md.* FROM member m LEFT JOIN member_description md ON m.id = md.member_id WHERE m.id = ?`,
     GetAllExtended = ``,
-    GetByIDAbbreviated = ``,
     GetByIDExtended = ``,
 
     // Create
@@ -36,10 +37,24 @@ type DeleteQueryActionReturn = { done: true } | { found: false, message: string 
 type UpdateQueryActionReturn = { done: true } | { done: false, message: string };
 
 interface MemberOperation {
-    CheckIfUsedUsername: {
+    CheckIfUsernameMatch: {
         Action: (
             pool: PoolConnection,
             payload: Pick<Member, 'username'>,
+        ) => Promise<SelectQueryActionReturn<Pick<Member, 'member_id'>>>;
+        QueryReturnType: EffectlessQueryResult<Pick<Member, 'member_id'>>;
+    };
+    CheckIfPasswordMatch: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<Member, 'member_id' | 'password'>,
+        ) => Promise<SelectQueryActionReturn<Pick<Member, 'member_id'>>>;
+        QueryReturnType: EffectlessQueryResult<Pick<Member, 'member_id' | 'salt' | 'hash'>>;
+    };
+    CheckIfCredentialsMatch: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<Member, 'username' | 'password'>,
         ) => Promise<SelectQueryActionReturn<Pick<Member, 'member_id'>>>;
         QueryReturnType: EffectlessQueryResult<Pick<Member, 'member_id'>>;
     };
@@ -88,21 +103,21 @@ interface MemberOperation {
     CreateFullMember: {
         Action: (
             pool: PoolConnection,
-            payload: Pick<Member, 'username' | 'password' | 'email' | 'fullname' | 'bio' | 'birthdate' | 'is_private'>
+            payload: Pick<Member, 'username' | 'password'> & Partial<Pick<Member, 'email' | 'fullname' | 'bio' | 'birthdate' | 'is_private'>>,
         ) => Promise<InsertionQueryActionReturn<Pick<Member, 'member_id' | 'affiliate_id' | 'entity_id'>>>;
         QueryReturnType: EffectfulQueryResult;
     };
 };
 
-const CheckIfUsedUsername: MemberOperation['CheckIfUsedUsername']['Action'] = (pool, payload) => {
+const CheckIfUsernameMatch: MemberOperation['CheckIfUsernameMatch']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
-        pool.query(MemberOperationQuery.CheckIfUsedUsername, [payload.username], (err, results) => {
+        pool.query(MemberOperationQuery.CheckIfUsernameMatch, [payload.username], (err, results) => {
             if (err) {
-                reject({ checkIfUsedUsernameError: err });
+                reject({ checkIfUsernameMatchError: err });
                 return;
             }
 
-            const parsed = results as MemberOperation['CheckIfUsedUsername']['QueryReturnType'];
+            const parsed = results as MemberOperation['CheckIfUsernameMatch']['QueryReturnType'];
 
             if (!parsed.length) {
                 resolve({ found: false, message: 'Username is available' });
@@ -110,6 +125,77 @@ const CheckIfUsedUsername: MemberOperation['CheckIfUsedUsername']['Action'] = (p
             }
 
             resolve({ found: true, payload: { member_id: parsed[0].member_id } });
+        });
+    });
+};
+
+const CheckIfPasswordMatch: MemberOperation['CheckIfPasswordMatch']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.query(MemberOperationQuery.CheckIfPasswordMatch, [payload.member_id], (err0, results) => {
+            if (err0) {
+                reject({ checkIfPasswordMatchError: err0 });
+                return;
+            }
+
+            const parsed = results as MemberOperation['CheckIfPasswordMatch']['QueryReturnType'];
+
+            if (!parsed.length) {
+                resolve({ found: false, message: 'Could not find a member with that ID' });
+                return;
+            }
+
+            bcrypt.compare(payload.password.concat(parsed[0].salt), parsed[0].hash, (err1, match) => {
+                if (err1) {
+                    reject({ checkIfPasswordMatchError: err1 });
+                    return;
+                }
+
+                if (!match) {
+                    resolve({ found: false, message: 'Could not authenticate because the credentials are wrong' });
+                    return;
+                }
+            
+                resolve({ found: true, payload: { member_id: payload.member_id }});
+            });
+        });
+    });
+};
+
+const CheckIfCredentialsMatch: MemberOperation['CheckIfCredentialsMatch']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.beginTransaction((err0) => {
+            if (err0) {
+                reject({ checkIfCredentialsMatchBeginTransactionError: err0 });
+                return;
+            }
+
+            CheckIfUsernameMatch(pool, { username: payload.username })
+            .then((res1) => {
+                if (!res1.found) {
+                    resolve({ found: false, message: 'Could not find a member with that username' });
+                    return;
+                }
+
+                CheckIfPasswordMatch(pool, { member_id: res1.payload.member_id, password: payload.password })
+                .then((res2) => {
+                    if (!res2.found) {
+                        resolve(res2);
+                        return;
+                    }
+                  
+                    resolve({ found: true, payload: { member_id: res1.payload.member_id } });
+                })
+                .catch((err2) => {
+                    pool.rollback(() => {
+                        reject({ checkIfPasswordMatchError: err2 });
+                    });
+                });
+            })
+            .catch((err1) => {
+                pool.rollback(() => {
+                    reject({ checkIfUsernameMatchError: err1 });
+                });
+            });
         });
     });
 };
@@ -231,7 +317,7 @@ const CreateMinimalMember: MemberOperation['CreateMinimalMember']['Action'] = (p
                 return;
             }
 
-            CheckIfUsedUsername(pool, { username: payload.username })
+            CheckIfUsernameMatch(pool, { username: payload.username })
             .then((res1) => {
                 if (res1.found) {
                     pool.rollback(() => {
@@ -328,7 +414,7 @@ const CreateFullMember: MemberOperation['CreateFullMember']['Action'] = (pool, p
                 return;
             }
 
-            CheckIfUsedUsername(pool, { username: payload.username })
+            CheckIfUsernameMatch(pool, { username: payload.username })
             .then((res1) => {
                 if (res1.found) {
                     pool.rollback(() => {
@@ -434,6 +520,7 @@ const CreateFullMember: MemberOperation['CreateFullMember']['Action'] = (pool, p
 };
 
 const Members = {
+    CheckIfCredentialsMatch,
     CreateMinimalMember,
     CreateMemberDescription,
     CreateFullMember,

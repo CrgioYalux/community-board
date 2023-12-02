@@ -3,10 +3,10 @@ import environment from '../environment';
 
 const expiresIn: string = '1d';
 
-function generateAccessToken(member: Pick<Member, 'entity_id' | 'affiliate_id' | 'member_id'>): string {
+function generateAccessToken(member: Pick<Member, 'member_id' | 'username'>): string {
     const payload: Session = {
+        ...member,
         expiresIn,
-        ...member
     };
 
     return jwt.sign(payload, environment.SECRET_KEY, { expiresIn });

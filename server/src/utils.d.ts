@@ -1,9 +1,6 @@
 // API Types
 
-type Session = {
-    entity_id: number;
-    affiliate_id: number;
-    member_id: number,
+type Session = Pick<Member, 'member_id' | 'username'> & {
     expiresIn: string,
 };
 
@@ -44,4 +41,5 @@ type Member = Affiliate & {
     is_private: boolean;
     password: string;
     salt: string;
+    hash: string;
 };
