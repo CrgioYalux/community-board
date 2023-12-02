@@ -2,7 +2,7 @@ import cors from 'cors';
 import express from 'express';
 
 import API from './API';
-import Middlewares from './middlewares';
+import Middleware from './middleware';
 
 function create() {
     const app = express();
@@ -14,7 +14,7 @@ function create() {
 
     // API request handling pipeline
    
-    app.use(Middlewares.Logs);
+    app.use(Middleware.Logs);
     
     // // Unauthed routes
     app.use(API.Router.Pong);
@@ -22,11 +22,11 @@ function create() {
     // app.use(Middlewares.Auth);
     //
     // // Authed routes
-    // app.use(API.Router.Members);
+    app.use(API.Router.Members);
     // app.use(API.Router.Posts);
     
-    app.use(Middlewares.ErrorHandling);
-    app.use(Middlewares.NotFound);
+    app.use(Middleware.ErrorHandling);
+    app.use(Middleware.NotFound);
 
     return app;
 };

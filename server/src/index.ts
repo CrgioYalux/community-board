@@ -1,3 +1,5 @@
+/// <reference path="./utils.d.ts" />
+
 import http from 'http';
 
 import environment from './environment';

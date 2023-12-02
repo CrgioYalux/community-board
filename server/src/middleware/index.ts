@@ -46,11 +46,11 @@ function Logs(request: Request, response: Response, next: NextFunction): void {
     next();
 };
 
-const Middlewares = {
+const Middleware = {
     Auth,
     ErrorHandling,
     NotFound,
     Logs,
 };
 
-export default Middlewares;
+export default Middleware;

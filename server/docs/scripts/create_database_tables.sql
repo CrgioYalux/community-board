@@ -4,7 +4,7 @@ USE community_board;
 
 CREATE TABLE IF NOT EXISTS entity (
 	id INT NOT NULL UNIQUE AUTO_INCREMENT,
-    is_active BIT(1) NOT NULL,
+    is_active BIT(1) NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT pk__entity
     PRIMARY KEY (id)
@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS affiliate (
 CREATE TABLE IF NOT EXISTS member (
 	id INT NOT NULL UNIQUE AUTO_INCREMENT,
     affiliate_id INT NOT NULL UNIQUE,
+    username VARCHAR (30) NOT NULL UNIQUE,
     CONSTRAINT pk__member
     PRIMARY KEY (id),
     CONSTRAINT fk__member__affiliate
@@ -32,12 +33,21 @@ CREATE TABLE IF NOT EXISTS member (
 
 CREATE TABLE IF NOT EXISTS member_description (
 	member_id INT NOT NULL UNIQUE,
-    bio VARCHAR (255),
-    fullname VARCHAR (100),
-    username VARCHAR (30),
-    birthdate DATE NOT NULL,
-    is_private BIT (1) NOT NULL,
+    email VARCHAR (100) DEFAULT NULL,
+	fullname VARCHAR (100) DEFAULT NULL,
+    bio VARCHAR (255) DEFAULT NULL,
+    birthdate DATE DEFAULT NULL,
+    is_private BIT (1) NOT NULL DEFAULT 0,
     CONSTRAINT fk__member_description__member
+    FOREIGN KEY (member_id)
+    REFERENCES member (id)
+);
+
+CREATE TABLE IF NOT EXISTS member_auth (
+	member_id INT NOT NULL UNIQUE,
+    salt VARCHAR (100) NOT NULL,
+    hash VARCHAR (100) NOT NULL,
+    CONSTRAINT fk__member_auth__member
     FOREIGN KEY (member_id)
     REFERENCES member (id)
 );
@@ -73,8 +83,8 @@ CREATE TABLE IF NOT EXISTS board (
 
 CREATE TABLE IF NOT EXISTS board_description (
 	board_id INT NOT NULL UNIQUE,
-    about VARCHAR (255),
-    is_private BIT (1) NOT NULL,
+    about VARCHAR (255) DEFAULT NULL,
+    is_private BIT (1) NOT NULL DEFAULT 0,
     CONSTRAINT fk__board_description__board
     FOREIGN KEY (board_id)
     REFERENCES board (id)
@@ -133,6 +143,7 @@ DROP TABLE IF EXISTS board_description;
 DROP TABLE IF EXISTS board;
 DROP TABLE IF EXISTS member_follow_request;
 DROP TABLE IF EXISTS member_description;
+DROP TABLE IF EXISTS member_auth;
 DROP TABLE IF EXISTS member;
 DROP TABLE IF EXISTS affiliate;
 DROP TABLE IF EXISTS entity;
