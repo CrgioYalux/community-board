@@ -125,11 +125,51 @@ function PostFull(request: Request<{}, {}, PostFullRequestBody>, response: Respo
     });
 }
 
+function Delete(request: Request, response: Response, next: NextFunction): void {
+    if (response.locals.session === undefined || response.locals.session.entity_id === undefined || response.locals.session.member_id === undefined) {
+        response.status(400).send({ message: 'There\'s empty required fields' });
+        return;
+    }
+
+    const entity_id = Number(response.locals.session.entity_id);
+    const member_id = Number(request.params[0]);
+
+    if (member_id !== response.locals.session.member_id) {
+        response.status(401).send({ message: 'Session\'s member ID and passed ID don\'t match' });
+        return;
+    }
+
+    db.pool.getConnection((err, connection) => {
+        if (err) {
+            connection.release();
+
+            const error = new Error('Could not connect to database');
+            next(error);
+
+            return;
+        }
+
+        Controller.Members.DeleteEntity(connection, { entity_id })
+        .then((res) => {
+            connection.release();
+
+            if (!res.done) {
+                response.status(400).send({ done: false, message: 'Could not delete the member' });
+                return;
+            }
+
+            response.status(200).send({ done: true });
+        })
+        .catch(next);
+    });
+}
+
 const Members = {
     Auth,
     PostMinimal,
     PostDescription,
     PostFull,
+    Delete,
 };
 
 export default Members;

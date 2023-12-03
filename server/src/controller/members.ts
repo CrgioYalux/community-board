@@ -36,14 +36,14 @@ enum MemberOperationQuery {
     // Unfollow
     
     // Delete
-    DeleteEntity = `UPDATE entity e SET e.is_active = 0 WHERE i.id = ?`,
+    DeleteEntity = `UPDATE entity e SET e.is_active = 0 WHERE e.id = ?`,
 
     // Update 
 };
 
 type InsertionQueryActionReturn<T> = { done: true, payload: T } | { done: false, message: string };
 type SelectQueryActionReturn<T> = { found: true, payload: T } | { found: false, message: string };
-type DeleteQueryActionReturn = { done: true } | { found: false, message: string };
+type DeleteQueryActionReturn = { done: true } | { done: false, message: string };
 type UpdateQueryActionReturn = { done: true } | { done: false, message: string };
 
 interface MemberOperation {
@@ -115,6 +115,14 @@ interface MemberOperation {
             pool: PoolConnection,
             payload: Pick<Member, 'username' | 'password'> & Partial<Pick<Member, 'email' | 'fullname' | 'bio' | 'birthdate' | 'is_private'>>,
         ) => Promise<InsertionQueryActionReturn<Pick<Member, 'member_id' | 'affiliate_id' | 'entity_id'>>>;
+        QueryReturnType: EffectfulQueryResult;
+    };
+
+    DeleteEntity: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<Member, 'entity_id'>,
+        ) => Promise<DeleteQueryActionReturn>;
         QueryReturnType: EffectfulQueryResult;
     };
 };
@@ -529,11 +537,32 @@ const CreateFullMember: MemberOperation['CreateFullMember']['Action'] = (pool, p
     });
 };
 
+const DeleteEntity: MemberOperation['DeleteEntity']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.query(MemberOperationQuery.DeleteEntity, [payload.entity_id], (err, results) => {
+            if (err) {
+                reject({ deleteEntityError: err });
+                return;
+            }
+
+            const parsed = results as MemberOperation['DeleteEntity']['QueryReturnType'];
+
+            if (!parsed.changedRows) {
+                resolve({ done: false, message: 'Could not find an entity with that ID' });
+                return;
+            }
+
+            resolve({ done: true });
+        });
+    });
+};
+
 const Members = {
     CheckIfCredentialsMatch,
     CreateMinimalMember,
     CreateMemberDescription,
     CreateFullMember,
+    DeleteEntity,
 };
 
 export default Members;

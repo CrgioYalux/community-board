@@ -5,5 +5,7 @@ import Handler from '../handler';
 
 const router = express.Router();
 
+router.delete(ROUTE.MEMBERS.DELETE, Handler.Members.Delete);
+
 export default router;
 
