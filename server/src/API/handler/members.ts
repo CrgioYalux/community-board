@@ -30,9 +30,14 @@ function Auth(request: Request<{}, {}, AuthRequestBody>, response: Response, nex
                 return;
             }
 
-            const token = Helper.generateAccessToken({ member_id: res.payload.member_id, username: request.body.username })
+            const token = Helper.generateAccessToken({ ...res.payload, username: request.body.username })
 
-            response.status(200).send({ authenticated: true, member_id: res.payload.member_id, token });
+            const payload = {
+                token,
+                ...res.payload,
+            };
+
+            response.status(200).send({ authenticated: true, payload });
         })
         .catch(next);
     });

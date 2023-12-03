@@ -6,7 +6,16 @@ import Helper from '../helper';
 
 enum MemberOperationQuery {
     // Helpers
-    CheckIfUsernameMatch = `SELECT id AS member_id FROM member m WHERE m.username = ? LIMIT 1`,
+    CheckIfUsernameMatch = `
+        SELECT 
+            e.id AS entity_id,
+            a.id AS affiliate_id,
+            m.id AS member_id
+        FROM entity e
+        JOIN affiliate a ON e.id = a.entity_id
+        JOIN member m ON a.id = m.affiliate_id
+        WHERE m.username = ? LIMIT 1
+    `,
     CheckIfPasswordMatch = `SELECT * FROM member_auth ma WHERE ma.member_id = ? LIMIT 1`,
 
     // Get
@@ -27,6 +36,7 @@ enum MemberOperationQuery {
     // Unfollow
     
     // Delete
+    DeleteEntity = `UPDATE entity e SET e.is_active = 0 WHERE i.id = ?`,
 
     // Update 
 };
@@ -41,8 +51,8 @@ interface MemberOperation {
         Action: (
             pool: PoolConnection,
             payload: Pick<Member, 'username'>,
-        ) => Promise<SelectQueryActionReturn<Pick<Member, 'member_id'>>>;
-        QueryReturnType: EffectlessQueryResult<Pick<Member, 'member_id'>>;
+        ) => Promise<SelectQueryActionReturn<Pick<Member, 'entity_id' | 'affiliate_id' | 'member_id'>>>;
+        QueryReturnType: EffectlessQueryResult<Pick<Member, 'entity_id' | 'affiliate_id' | 'member_id'>>;
     };
     CheckIfPasswordMatch: {
         Action: (
@@ -55,8 +65,8 @@ interface MemberOperation {
         Action: (
             pool: PoolConnection,
             payload: Pick<Member, 'username' | 'password'>,
-        ) => Promise<SelectQueryActionReturn<Pick<Member, 'member_id'>>>;
-        QueryReturnType: EffectlessQueryResult<Pick<Member, 'member_id'>>;
+        ) => Promise<SelectQueryActionReturn<Pick<Member, 'entity_id' | 'affiliate_id' | 'member_id'>>>;
+        QueryReturnType: EffectlessQueryResult<Pick<Member, 'entity_id' | 'affiliate_id' | 'member_id'>>;
     };
 
     CreateEntity: {
@@ -124,7 +134,7 @@ const CheckIfUsernameMatch: MemberOperation['CheckIfUsernameMatch']['Action'] = 
                 return;
             }
 
-            resolve({ found: true, payload: { member_id: parsed[0].member_id } });
+            resolve({ found: true, payload: parsed[0] });
         });
     });
 };
@@ -183,7 +193,7 @@ const CheckIfCredentialsMatch: MemberOperation['CheckIfCredentialsMatch']['Actio
                         return;
                     }
                   
-                    resolve({ found: true, payload: { member_id: res1.payload.member_id } });
+                    resolve({ found: true, payload: res1.payload });
                 })
                 .catch((err2) => {
                     pool.rollback(() => {
