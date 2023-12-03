@@ -16,12 +16,13 @@ function create() {
    
     app.use(Middleware.Logs);
     
-    // // Unauthed routes
+    // Unauthed routes
     app.use(API.Router.Pong);
-    //
-    // app.use(Middlewares.Auth);
-    //
-    // // Authed routes
+    app.use(API.Router.Unauth);
+    
+    app.use(Middleware.Auth);
+    
+    // Authed routes
     app.use(API.Router.Members);
     // app.use(API.Router.Posts);
     
