@@ -64,10 +64,19 @@ function PostMinimal(request: Request<{}, {}, PostMinimalRequestBody>, response:
         .then((res) => {
             connection.release();
 
-            const status = res.done ? 201 : 400;
+            if (!res.done) {
+                response.status(400).send({ created: false, message: res.message });
+                return;
+            }
 
-            response.status(status).send(res);
-            return;
+            const token = Helper.generateAccessToken({ ...res.payload, username: request.body.username })
+
+            const payload = {
+                token,
+                ...res.payload,
+            };
+
+            response.status(201).send({ created: true, payload });
         })
         .catch(next);
     });
@@ -75,7 +84,17 @@ function PostMinimal(request: Request<{}, {}, PostMinimalRequestBody>, response:
 
 type PostDescriptionRequestBody = Partial<Pick<Member, 'email' | 'fullname' | 'bio' | 'birthdate' | 'is_private'>>;
 function PostDescription(request: Request<Request['params'], {}, PostDescriptionRequestBody>, response: Response, next: NextFunction): void {
+    if (response.locals.session === undefined || response.locals.session.entity_id === undefined || response.locals.session.member_id === undefined) {
+        response.status(400).send({ message: 'There\'s empty required fields' });
+        return;
+    }
+
     const member_id = Number(request.params[0]);
+
+    if (member_id !== Number(response.locals.session.member_id)) {
+        response.status(401).send({ message: 'Session\'s member ID and passed ID don\'t match' });
+        return;
+    }
 
     db.pool.getConnection((err, connection) => {
         if (err) {
@@ -116,10 +135,19 @@ function PostFull(request: Request<{}, {}, PostFullRequestBody>, response: Respo
         .then((res) => {
             connection.release();
 
-            const status = res.done ? 201 : 400;
+            if (!res.done) {
+                response.status(400).send({ created: false, message: res.message });
+                return;
+            }
 
-            response.status(status).send(res);
-            return;
+            const token = Helper.generateAccessToken({ ...res.payload, username: request.body.username })
+
+            const payload = {
+                token,
+                ...res.payload,
+            };
+
+            response.status(201).send({ created: true, payload });
         })
         .catch(next);
     });
