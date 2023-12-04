@@ -80,8 +80,8 @@ interface MemberOperation {
         Action: (
             pool: PoolConnection,
             payload: Pick<Member, 'username'>,
-        ) => Promise<SelectQueryActionReturn<Pick<Member, 'is_active' | 'entity_id' | 'affiliate_id' | 'member_id'>>>;
-        QueryReturnType: EffectlessQueryResult<Pick<Member, 'is_active' | 'entity_id' | 'affiliate_id' | 'member_id'>>;
+        ) => Promise<SelectQueryActionReturn<MemberIdentificator & Pick<Member, 'is_active'>>>;
+        QueryReturnType: EffectlessQueryResult<MemberIdentificator & Pick<Member, 'is_active'>>;
     };
     CheckIfPasswordMatch: {
         Action: (
@@ -93,16 +93,16 @@ interface MemberOperation {
     CheckIfCredentialsMatch: {
         Action: (
             pool: PoolConnection,
-            payload: Pick<Member, 'username' | 'password'>,
-        ) => Promise<SelectQueryActionReturn<Pick<Member, 'entity_id' | 'affiliate_id' | 'member_id'>>>;
-        QueryReturnType: EffectlessQueryResult<Pick<Member, 'entity_id' | 'affiliate_id' | 'member_id'>>;
+            payload: MemberLogin,
+        ) => Promise<SelectQueryActionReturn<MemberIdentificator>>;
+        QueryReturnType: EffectlessQueryResult<MemberIdentificator>;
     };
     CheckIfIDMatch: {
         Action: (
             pool: PoolConnection,
             payload: Pick<Member, 'member_id'>,
-        ) => Promise<SelectQueryActionReturn<Pick<Member, 'is_active' | 'entity_id' | 'affiliate_id' | 'member_id' | 'has_description' | 'email' | 'fullname' | 'bio' | 'birthdate' | 'is_private'>>>;
-        QueryReturnType: EffectlessQueryResult<Pick<Member, 'is_active' | 'entity_id' | 'affiliate_id' | 'member_id' | 'has_description' | 'email' | 'fullname' | 'bio' | 'birthdate' | 'is_private'>>;
+        ) => Promise<SelectQueryActionReturn<MemberIdentificator & MemberDescription & Pick<Member, 'is_active' | 'has_description'>>>;
+        QueryReturnType: EffectlessQueryResult<MemberIdentificator & MemberDescription & Pick<Member, 'is_active' | 'has_description'>>;
     };
 
     CreateEntity: {
@@ -135,22 +135,22 @@ interface MemberOperation {
     CreateMemberDescription: {
         Action: (
             pool: PoolConnection,
-            payload: Pick<Member, 'member_id'> & Partial<Pick<Member, 'email' | 'fullname' | 'bio' | 'birthdate' | 'is_private'>>,
+            payload: Pick<Member, 'member_id'> & Partial<MemberDescription>,
         ) => Promise<InsertionQueryActionReturn<Pick<Member, 'member_id'>>>;
         QueryReturnType: EffectfulQueryResult;
     };
     CreateMinimalMember: {
         Action: (
             pool: PoolConnection,
-            payload: Pick<Member, 'username' | 'password'>,
-        ) => Promise<InsertionQueryActionReturn<Pick<Member, 'member_id' | 'affiliate_id' | 'entity_id'>>>;
+            payload: MemberRegister,
+        ) => Promise<InsertionQueryActionReturn<MemberIdentificator>>;
         QueryReturnType: EffectfulQueryResult;
     };
     CreateFullMember: {
         Action: (
             pool: PoolConnection,
-            payload: Pick<Member, 'username' | 'password'> & Partial<Pick<Member, 'email' | 'fullname' | 'bio' | 'birthdate' | 'is_private'>>,
-        ) => Promise<InsertionQueryActionReturn<Pick<Member, 'member_id' | 'affiliate_id' | 'entity_id'>>>;
+            payload: MemberRegister & Partial<MemberDescription>,
+        ) => Promise<InsertionQueryActionReturn<MemberIdentificator>>;
         QueryReturnType: EffectfulQueryResult;
     };
 

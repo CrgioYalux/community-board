@@ -4,8 +4,7 @@ import Controller from '../../controller';
 import db from '../../db';
 import Helper from '../../helper';
 
-type AuthRequestBody = Pick<Member, 'username' | 'password'>;
-function Auth(request: Request<{}, {}, AuthRequestBody>, response: Response, next: NextFunction): void {
+function Auth(request: Request<{}, {}, MemberLogin>, response: Response, next: NextFunction): void {
     if (request.body.username === undefined || request.body.password === undefined) {
         response.status(400).send({ message: 'There\'s empty required fields' });
         return;
@@ -43,8 +42,7 @@ function Auth(request: Request<{}, {}, AuthRequestBody>, response: Response, nex
     });
 }
 
-type PostMinimalRequestBody = Pick<Member, 'username' | 'password'>;
-function PostMinimal(request: Request<{}, {}, PostMinimalRequestBody>, response: Response, next: NextFunction): void {
+function PostMinimal(request: Request<{}, {}, MemberLogin>, response: Response, next: NextFunction): void {
     if (request.body.username === undefined || request.body.password === undefined) {
         response.status(400).send({ message: 'There\'s empty required fields' });
         return;
@@ -82,8 +80,7 @@ function PostMinimal(request: Request<{}, {}, PostMinimalRequestBody>, response:
     });
 }
 
-type PostDescriptionRequestBody = Partial<Pick<Member, 'email' | 'fullname' | 'bio' | 'birthdate' | 'is_private'>>;
-function PostDescription(request: Request<Request['params'], {}, PostDescriptionRequestBody>, response: Response, next: NextFunction): void {
+function PostDescription(request: Request<Request['params'], {}, Partial<MemberDescription>>, response: Response, next: NextFunction): void {
     if (response.locals.session === undefined || response.locals.session.entity_id === undefined || response.locals.session.member_id === undefined) {
         response.status(400).send({ message: 'There\'s empty required fields' });
         return;
@@ -119,8 +116,7 @@ function PostDescription(request: Request<Request['params'], {}, PostDescription
     });
 }
 
-type PostFullRequestBody = Pick<Member, 'username' | 'password'> & Partial<Pick<Member, 'email' | 'fullname' | 'bio' | 'birthdate' | 'is_private'>>;
-function PostFull(request: Request<{}, {}, PostFullRequestBody>, response: Response, next: NextFunction): void {
+function PostFull(request: Request<{}, {}, MemberLogin & Partial<MemberDescription>>, response: Response, next: NextFunction): void {
     db.pool.getConnection((err, connection) => {
         if (err) {
             connection.release();
@@ -192,8 +188,7 @@ function Delete(request: Request, response: Response, next: NextFunction): void 
     });
 }
 
-type UpdateRequestBody = Partial<MemberDescription>;
-function Patch(request: Request<Request['params'], {}, UpdateRequestBody>, response: Response, next: NextFunction): void {
+function Patch(request: Request<Request['params'], {}, Partial<MemberDescription>>, response: Response, next: NextFunction): void {
     if (response.locals.session === undefined || response.locals.session.entity_id === undefined || response.locals.session.member_id === undefined) {
         response.status(400).send({ message: 'There\'s empty required fields' });
         return;

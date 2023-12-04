@@ -31,6 +31,12 @@ type Affiliate = Entity & {
     affiliate_id: number;
 };
 
+type MemberAuth = {
+    password: string;
+    salt: string;
+    hash: string;
+};
+
 type MemberDescription = {
     email: string;
     fullname: string;
@@ -39,14 +45,12 @@ type MemberDescription = {
     is_private: boolean;
 };
 
-type MemberAuth = {
-    password: string;
-    salt: string;
-    hash: string;
-};
-
 type Member = Affiliate & MemberAuth & MemberDescription & {
     member_id: number;
     username: string;
     has_description: boolean;
 };
+
+type MemberRegister = Pick<Member, 'username' | 'password'>;
+type MemberLogin = Pick<Member, 'username' | 'password'>;
+type MemberIdentificator = Pick<Member, 'entity_id' | 'affiliate_id' | 'member_id'>;
