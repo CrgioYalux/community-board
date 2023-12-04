@@ -75,7 +75,7 @@ function PostMinimal(request: Request<{}, {}, PostMinimalRequestBody>, response:
 
 type PostDescriptionRequestBody = Partial<Pick<Member, 'email' | 'fullname' | 'bio' | 'birthdate' | 'is_private'>>;
 function PostDescription(request: Request<Request['params'], {}, PostDescriptionRequestBody>, response: Response, next: NextFunction): void {
-    const memberID = Number(request.params[0]);
+    const member_id = Number(request.params[0]);
 
     db.pool.getConnection((err, connection) => {
         if (err) {
@@ -87,7 +87,7 @@ function PostDescription(request: Request<Request['params'], {}, PostDescription
             return;
         }
 
-        Controller.Members.CreateMemberDescription(connection, { member_id: memberID, ...request.body })
+        Controller.Members.CreateMemberDescription(connection, { member_id, ...request.body })
         .then((res) => {
             connection.release();
 
@@ -134,7 +134,7 @@ function Delete(request: Request, response: Response, next: NextFunction): void 
     const entity_id = Number(response.locals.session.entity_id);
     const member_id = Number(request.params[0]);
 
-    if (member_id !== response.locals.session.member_id) {
+    if (member_id !== Number(response.locals.session.member_id)) {
         response.status(401).send({ message: 'Session\'s member ID and passed ID don\'t match' });
         return;
     }

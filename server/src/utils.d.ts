@@ -42,4 +42,5 @@ type Member = Affiliate & {
     password: string;
     salt: string;
     hash: string;
+    has_description: boolean;
 };

@@ -8,15 +8,33 @@ enum MemberOperationQuery {
     // Helpers
     CheckIfUsernameMatch = `
         SELECT 
+            IF(e.is_active = 1, TRUE, FALSE) as is_active,
             e.id AS entity_id,
             a.id AS affiliate_id,
             m.id AS member_id
         FROM entity e
         JOIN affiliate a ON e.id = a.entity_id
         JOIN member m ON a.id = m.affiliate_id
-        WHERE m.username = ? LIMIT 1
+        WHERE m.username = ?
+        LIMIT 1
     `,
     CheckIfPasswordMatch = `SELECT * FROM member_auth ma WHERE ma.member_id = ? LIMIT 1`,
+    CheckIfIDMatch = `
+        SELECT
+            IF(e.is_active = 1, TRUE, FALSE) AS is_active,
+            e.id AS entity_id,
+            a.id AS affiliate_id,
+            m.id AS member_id,
+            IF(md.member_id IS NULL, FALSE, TRUE) AS has_description,
+            md.email, md.fullname, md.bio, md.birthdate,
+            IF(md.is_private = 1, TRUE, FALSE) AS is_private
+        FROM entity e
+        JOIN affiliate a ON e.id = a.entity_id
+        JOIN member m ON a.id = m.affiliate_id
+        LEFT JOIN member_description md ON m.id = md.member_id
+        WHERE m.id = ?
+        LIMIT 1
+    `,
 
     // Get
     GetAllAbbreviated = `SELECT m.affiliate_id, md.* FROM member m LEFT JOIN member_description md ON m.id = md.member_id`,
@@ -51,8 +69,8 @@ interface MemberOperation {
         Action: (
             pool: PoolConnection,
             payload: Pick<Member, 'username'>,
-        ) => Promise<SelectQueryActionReturn<Pick<Member, 'entity_id' | 'affiliate_id' | 'member_id'>>>;
-        QueryReturnType: EffectlessQueryResult<Pick<Member, 'entity_id' | 'affiliate_id' | 'member_id'>>;
+        ) => Promise<SelectQueryActionReturn<Pick<Member, 'is_active' | 'entity_id' | 'affiliate_id' | 'member_id'>>>;
+        QueryReturnType: EffectlessQueryResult<Pick<Member, 'is_active' | 'entity_id' | 'affiliate_id' | 'member_id'>>;
     };
     CheckIfPasswordMatch: {
         Action: (
@@ -67,6 +85,13 @@ interface MemberOperation {
             payload: Pick<Member, 'username' | 'password'>,
         ) => Promise<SelectQueryActionReturn<Pick<Member, 'entity_id' | 'affiliate_id' | 'member_id'>>>;
         QueryReturnType: EffectlessQueryResult<Pick<Member, 'entity_id' | 'affiliate_id' | 'member_id'>>;
+    };
+    CheckIfIDMatch: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<Member, 'member_id'>,
+        ) => Promise<SelectQueryActionReturn<Pick<Member, 'is_active' | 'entity_id' | 'affiliate_id' | 'member_id' | 'has_description' | 'email' | 'fullname' | 'bio' | 'birthdate' | 'is_private'>>>;
+        QueryReturnType: EffectlessQueryResult<Pick<Member, 'is_active' | 'entity_id' | 'affiliate_id' | 'member_id' | 'has_description' | 'email' | 'fullname' | 'bio' | 'birthdate' | 'is_private'>>;
     };
 
     CreateEntity: {
@@ -194,6 +219,11 @@ const CheckIfCredentialsMatch: MemberOperation['CheckIfCredentialsMatch']['Actio
                     return;
                 }
 
+                if (!res1.payload.is_active) {
+                    resolve({ found: false, message: 'Member is deleted' });
+                    return;
+                }
+
                 CheckIfPasswordMatch(pool, { member_id: res1.payload.member_id, password: payload.password })
                 .then((res2) => {
                     if (!res2.found) {
@@ -214,6 +244,26 @@ const CheckIfCredentialsMatch: MemberOperation['CheckIfCredentialsMatch']['Actio
                     reject({ checkIfUsernameMatchError: err1 });
                 });
             });
+        });
+    });
+};
+
+const CheckIfIDMatch: MemberOperation['CheckIfIDMatch']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.query(MemberOperationQuery.CheckIfIDMatch, [payload.member_id], (err, results) => {
+            if (err) {
+                reject({ checkIfMemberIsActiveByIDError: err });
+                return;
+            }
+
+            const parsed = results as MemberOperation['CheckIfIDMatch']['QueryReturnType'];
+
+            if (!parsed.length) {
+                resolve({ found: false, message: 'No member found with that ID' });
+                return;
+            }
+            
+            resolve({ found: true, payload: parsed[0] });
         });
     });
 };
@@ -309,20 +359,69 @@ const CreateMemberAuth: MemberOperation['CreateMemberAuth']['Action'] = (pool, p
 
 const CreateMemberDescription: MemberOperation['CreateMemberDescription']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
-        pool.query(MemberOperationQuery.CreateMemberDescription, [payload.member_id, payload.email ?? null, payload.fullname ?? null, payload.bio ?? null, payload.birthdate ?? null, payload.is_private ?? null, payload.is_private], (err, results) => {
-            if (err) {
-                reject({ createMemberDescriptionError: err });
-                return;
-            }
-            
-            const parsed = results as MemberOperation['CreateMemberDescription']['QueryReturnType'];
-
-            if (!parsed.affectedRows) {
-                resolve({ done: false, message: 'Could not create the member description' });
+        pool.beginTransaction((err0) => {
+            if (err0) {
+                reject({ createMemberDescriptionBeginTransactionError: err0 });
                 return;
             }
 
-            resolve({ done: true, payload: { member_id: payload.member_id } });
+            CheckIfIDMatch(pool, { member_id: payload.member_id })
+            .then((res1) => {
+                if (!res1.found) {
+                    pool.rollback(() => {
+                        resolve({ done: false, message: res1.message });
+                    });
+                    return;
+                }
+
+                if (!res1.payload.is_active) {
+                    pool.rollback(() => {
+                        resolve({ done: false, message: 'Member is deleted' });
+                    });
+                    return;
+                }
+
+                if (res1.payload.has_description) {
+                    pool.rollback(() => {
+                        resolve({ done: false, message: 'Member already has a description' });
+                    });
+                    return;
+                }
+
+                pool.query(MemberOperationQuery.CreateMemberDescription, [payload.member_id, payload.email ?? null, payload.fullname ?? null, payload.bio ?? null, payload.birthdate ?? null, payload.is_private ?? null, payload.is_private], (err2, results) => {
+                    if (err2) {
+                        pool.rollback(() => {
+                            reject({ createMemberDescriptionError: err2 });
+                        });
+                        return;
+                    }
+
+                    const parsed = results as MemberOperation['CreateMemberDescription']['QueryReturnType'];
+
+                    if (!parsed.affectedRows) {
+                        pool.rollback(() => {
+                            resolve({ done: false, message: 'Could not create the member description' });
+                        });
+                        return;
+                    }
+
+                    pool.commit((err3) => {
+                        if (err3) {
+                            pool.rollback(() => {
+                                reject({ createMemberDescriptionCommitTransactionError: err3 });
+                            });
+                            return;
+                        }
+
+                        resolve({ done: true, payload: { member_id: payload.member_id } });
+                    });
+                });
+            })
+            .catch((err1) => {
+                pool.rollback(() => {
+                    reject(err1);
+                });
+            });
         });
     });
 };
@@ -384,8 +483,8 @@ const CreateMinimalMember: MemberOperation['CreateMinimalMember']['Action'] = (p
                                     if (err6) {
                                         pool.rollback(() => {
                                             reject({ createMinimalMemberCommitTransactionError: err6 });
-                                            return;
                                         });
+                                        return;
                                     }
 
                                     resolve({ done: true, payload: { entity_id: res2.payload.entity_id, affiliate_id: res3.payload.affiliate_id, member_id: res4.payload.member_id } });
@@ -491,8 +590,8 @@ const CreateFullMember: MemberOperation['CreateFullMember']['Action'] = (pool, p
                                         if (err7) {
                                             pool.rollback(() => {
                                                 reject({ createMinimalMemberCommitTransactionError: err7 });
-                                                return;
                                             });
+                                            return;
                                         }
 
                                         resolve({ done: true, payload: { entity_id: res2.payload.entity_id, affiliate_id: res3.payload.affiliate_id, member_id: res4.payload.member_id } });
