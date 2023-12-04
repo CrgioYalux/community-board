@@ -57,6 +57,17 @@ enum MemberOperationQuery {
     DeleteEntity = `UPDATE entity e SET e.is_active = 0 WHERE e.id = ?`,
 
     // Update 
+    UpdateMemberDescription = `
+        UPDATE member_description md
+        SET
+            md.email = IF(? IS NULL, md.email, ?),
+            md.fullname = IF(? IS NULL, md.fullname, ?),
+            md.bio = IF(? IS NULL, md.bio, ?),
+            md.birthdate = IF(? IS NULL, md.birthdate, ?),
+            md.is_private = IF(? IS NULL, md.is_private, ?)
+        WHERE
+            md.member_id = ?
+    `,
 };
 
 type InsertionQueryActionReturn<T> = { done: true, payload: T } | { done: false, message: string };
@@ -148,6 +159,14 @@ interface MemberOperation {
             pool: PoolConnection,
             payload: Pick<Member, 'entity_id'>,
         ) => Promise<DeleteQueryActionReturn>;
+        QueryReturnType: EffectfulQueryResult;
+    };
+
+    UpdateMemberDescription: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<Member, 'member_id'> & Partial<MemberDescription>,
+        ) => Promise<UpdateQueryActionReturn>;
         QueryReturnType: EffectfulQueryResult;
     };
 };
@@ -656,12 +675,85 @@ const DeleteEntity: MemberOperation['DeleteEntity']['Action'] = (pool, payload) 
     });
 };
 
+const UpdateMemberDescription: MemberOperation['UpdateMemberDescription']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.beginTransaction((err0) => {
+            if (err0) {
+                reject({ updateMemberDescriptionBeginTransactionError: err0 });
+                return;
+            }
+
+            CheckIfIDMatch(pool, { member_id: payload.member_id })
+            .then((res1) => {
+                if (!res1.found) {
+                    pool.rollback(() => {
+                        resolve({ done: false, message: res1.message });
+                    });
+                    return;
+                }
+
+                if (!res1.payload.is_active) {
+                    pool.rollback(() => {
+                        resolve({ done: false, message: 'Member is deleted' });
+                    });
+                    return;
+                }
+
+                const values = [
+                    payload.email ?? null, payload.email,
+                    payload.fullname ?? null, payload.fullname,
+                    payload.bio ?? null, payload.bio,
+                    payload.birthdate ?? null, payload.birthdate,
+                    payload.is_private ?? null, payload.is_private,
+                    payload.member_id
+                ];
+
+                pool.query(MemberOperationQuery.UpdateMemberDescription, values, (err2, results) => {
+                    if (err2) {
+                        pool.rollback(() => {
+                            reject({ updateMemberDescriptionError: err2 });
+                        });
+                        return;
+                    }
+
+                    const parsed = results as MemberOperation['UpdateMemberDescription']['QueryReturnType'];
+
+                    if (!parsed.changedRows) {
+                        pool.rollback(() => {
+                            resolve({ done: false, message: 'Could not update the member description' });
+                        });
+                        return;
+                    }
+
+                    pool.commit((err3) => {
+                        if (err3) {
+                            pool.rollback(() => {
+                                reject({ updateMemberDescriptionCommitTransactionError: err3 });
+                            });
+                            return;
+                        }
+
+
+                        resolve({ done: true });
+                    });
+                });
+            })
+            .catch((err1) => {
+                pool.rollback(() => {
+                    reject(err1);
+                });
+            });
+        });
+    });
+};
+
 const Members = {
     CheckIfCredentialsMatch,
     CreateMinimalMember,
     CreateMemberDescription,
     CreateFullMember,
     DeleteEntity,
+    UpdateMemberDescription,
 };
 
 export default Members;

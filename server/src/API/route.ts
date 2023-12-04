@@ -8,6 +8,7 @@ const MEMBERS = {
     POST_DESCRIPTION: /^\/api\/members\/(\d+)\/description\/?$/,
     POST_FULL: /^\/api\/members\/full\/?$/,
     DELETE: /^\/api\/members\/(\d+)\/?$/,
+    PATCH: /^\/api\/members\/(\d+)\/?$/,
 };
 
 const ROUTE = {

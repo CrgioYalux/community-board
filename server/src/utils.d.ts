@@ -31,16 +31,22 @@ type Affiliate = Entity & {
     affiliate_id: number;
 };
 
-type Member = Affiliate & {
-    member_id: number;
+type MemberDescription = {
     email: string;
-    username: string;
     fullname: string;
     bio: string;
     birthdate: Date;
     is_private: boolean;
+};
+
+type MemberAuth = {
     password: string;
     salt: string;
     hash: string;
+};
+
+type Member = Affiliate & MemberAuth & MemberDescription & {
+    member_id: number;
+    username: string;
     has_description: boolean;
 };
