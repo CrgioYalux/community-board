@@ -4,6 +4,24 @@ enum CommonOperationQuery {
     CheckIfAlreadySavedByAffiliateID = `
         SELECT * FROM post_saved ps WHERE ps.post_id = ? AND ps.affiliate_id = ?
     `,
+    CheckIfValidAffiliateByID = `
+        SELECT
+            IF(e.is_active = 1, TRUE, FALSE) AS is_active,
+            e.id AS entity_id,
+            a.id AS affiliate_id,
+            IF(m.id IS NULL, FALSE, TRUE) AS is_member,
+            IF(b.id IS NULL, FALSE, TRUE) AS is_board,
+            IF(md.member_id IS NULL, IF(bd.board_id IS NULL, FALSE, TRUE), TRUE) AS has_description,
+            IF(md.is_private IS NULL, NULL, IF(md.is_private = 1, TRUE, FALSE)) AS is_private
+        FROM entity e
+        JOIN affiliate a ON e.id = a.entity_id
+        LEFT JOIN member m ON a.id = m.affiliate_id
+        LEFT JOIN member_description md ON m.id = md.member_id
+        LEFT JOIN board b ON a.id = b.affiliate_id
+        LEFT JOIN board_description bd ON b.id = bd.board_id
+        WHERE a.id = ?
+        LIMIT 1
+    `,
 
     CreateEntity = `INSERT INTO entity VALUES ()`,
     CreateAffiliate = `INSERT INTO affiliate (entity_id) VALUES (?)`,
@@ -18,6 +36,13 @@ interface CommonOperation {
             payload: Pick<Post, 'post_id'> & Pick<Affiliate, 'affiliate_id'>,
         ) => Promise<SelectQueryActionReturn<Pick<Post, 'post_id'> & Pick<Affiliate, 'affiliate_id'>>>;
         QueryReturnType: EffectlessQueryResult<Pick<Post, 'post_id'> & Pick<Affiliate, 'affiliate_id'>>;
+    };
+    CheckIfValidAffiliateByID: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<Affiliate, 'affiliate_id'>,
+        ) => Promise<SelectQueryActionReturn<Pick<Member, 'is_active' | 'entity_id' | 'affiliate_id' | 'is_member' | 'is_board' | 'has_description' | 'is_private'>>>;
+        QueryReturnType: EffectlessQueryResult<Pick<Member, 'is_active' | 'entity_id' | 'affiliate_id' | 'is_member' | 'is_board' | 'has_description' | 'is_private'>>;
     };
 
     CreateEntity: {
@@ -59,6 +84,26 @@ const CheckIfAlreadySavedByAffiliateID: CommonOperation['CheckIfAlreadySavedByAf
             }
 
             resolve({ found: true, payload });
+        });
+    });
+};
+
+const CheckIfValidAffiliateByID: CommonOperation['CheckIfValidAffiliateByID']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.query(CommonOperationQuery.CheckIfValidAffiliateByID, [payload.affiliate_id], (err, results) => {
+            if (err) {
+                reject({ checkIfValidAffiliateByIDError: err });
+                return;
+            }
+
+            const parsed = results as CommonOperation['CheckIfValidAffiliateByID']['QueryReturnType'];
+
+            if (!parsed.length) {
+                resolve({ found: false, message: 'Could not find a member or board with that ID' });
+                return;
+            }
+
+            resolve({ found: true, payload: parsed[0] });
         });
     });
 };
@@ -125,6 +170,7 @@ const DeleteEntity: CommonOperation['DeleteEntity']['Action'] = (pool, payload) 
 
 const Common = {
     CheckIfAlreadySavedByAffiliateID,
+    CheckIfValidAffiliateByID,
     CreateEntity,
     CreateAffiliate,
     DeleteEntity,

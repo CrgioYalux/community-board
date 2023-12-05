@@ -6,6 +6,42 @@ import Helper from '../helper';
 
 enum MemberOperationQuery {
     // Helpers
+    CheckIfValidMemberByID = `
+        SELECT
+            IF(e.is_active = 1, TRUE, FALSE) AS is_active,
+            e.id AS entity_id,
+            a.id AS affiliate_id,
+            m.id AS member_id,
+            IF(md.member_id IS NULL, FALSE, TRUE) AS has_description,
+            IF(md.is_private IS NULL, NULL, IF(md.is_private = 1, TRUE, FALSE)) AS is_private
+        FROM entity e
+        JOIN affiliate a ON e.id = a.entity_id
+        JOIN member m ON a.id = m.affiliate_id
+        LEFT JOIN member_description md ON m.id = md.member_id
+        WHERE m.id = ?
+        LIMIT 1
+    `,
+    CheckIfValidMemberByUsername = `
+        SELECT
+            IF(e.is_active = 1, TRUE, FALSE) AS is_active,
+            e.id AS entity_id,
+            a.id AS affiliate_id,
+            m.id AS member_id,
+            IF(md.member_id IS NULL, FALSE, TRUE) AS has_description,
+            IF(md.is_private IS NULL, NULL, IF(md.is_private = 1, TRUE, FALSE)) AS is_private
+        FROM entity e
+        JOIN affiliate a ON e.id = a.entity_id
+        JOIN member m ON a.id = m.affiliate_id
+        LEFT JOIN member_description md ON m.id = md.member_id
+        WHERE m.username = ?
+        LIMIT 1
+    `,
+    CheckIfFollowRequestExists = `
+        SELECT
+            mfr.id AS member_follow_request_id
+        FROM member_follow_request mfr
+        WHERE mfr.from_member_id = ? AND mfr.to_affiliate_id = ?
+    `,
     CheckIfUsernameMatch = `
         SELECT 
             IF(e.is_active = 1, TRUE, FALSE) as is_active,
@@ -27,7 +63,7 @@ enum MemberOperationQuery {
             m.id AS member_id,
             IF(md.member_id IS NULL, FALSE, TRUE) AS has_description,
             md.email, md.fullname, md.bio, md.birthdate,
-            IF(md.is_private = 1, TRUE, FALSE) AS is_private
+            IF(md.is_private IS NULL, NULL, IF(md.is_private = 1, TRUE, FALSE)) AS is_private
         FROM entity e
         JOIN affiliate a ON e.id = a.entity_id
         JOIN member m ON a.id = m.affiliate_id
@@ -48,7 +84,8 @@ enum MemberOperationQuery {
     CreateMemberDescription = `INSERT INTO member_description (member_id, email, fullname, bio, birthdate, is_private) VALUES (?, ?, ?, ?, ?, IF(? IS NULL, 0, ?))`,
 
     // Follow
-    
+    Follow = `INSERT INTO member_follow_request (from_member_id, to_affiliate_id, is_accepted) VALUES (?, ?, ?)`,
+
     // Unfollow
     
     // Delete is handled as entity by common controllers
@@ -68,6 +105,27 @@ enum MemberOperationQuery {
 };
 
 interface MemberOperation {
+    CheckIfValidMemberByID: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<Member, 'member_id'>,
+        ) => Promise<SelectQueryActionReturn<MemberIdentificator & Pick<Member, 'is_active' | 'has_description' | 'is_private'>>>;
+        QueryReturnType: EffectlessQueryResult<MemberIdentificator & Pick<Member, 'is_active' | 'has_description' | 'is_private'>>;
+    };
+    CheckIfValidMemberByUsername: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<Member, 'username'>,
+        ) => Promise<SelectQueryActionReturn<MemberIdentificator & Pick<Member, 'is_active' | 'has_description' | 'is_private'>>>;
+        QueryReturnType: EffectlessQueryResult<MemberIdentificator & Pick<Member, 'is_active' | 'has_description' | 'is_private'>>;
+    };
+    CheckIfFollowRequestExists: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<MemberFollowRequest, 'from_member_id' | 'to_affiliate_id'>,
+        ) => Promise<SelectQueryActionReturn<Pick<MemberFollowRequest, 'member_follow_request_id'>>>;
+        QueryReturnType: EffectlessQueryResult<Pick<MemberFollowRequest, 'member_follow_request_id'>>;
+    };
     CheckIfUsernameMatch: {
         Action: (
             pool: PoolConnection,
@@ -133,6 +191,14 @@ interface MemberOperation {
         QueryReturnType: EffectfulQueryResult;
     };
 
+    Follow: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<MemberFollowRequest, 'from_member_id' | 'to_affiliate_id'>,
+        ) => Promise<InsertionQueryActionReturn<Pick<MemberFollowRequest, 'member_follow_request_id'>>>;
+        QueryReturnType: EffectfulQueryResult;
+    };
+
     UpdateMemberDescription: {
         Action: (
             pool: PoolConnection,
@@ -140,6 +206,66 @@ interface MemberOperation {
         ) => Promise<UpdateQueryActionReturn>;
         QueryReturnType: EffectfulQueryResult;
     };
+};
+
+const CheckIfValidMemberByID: MemberOperation['CheckIfValidMemberByID']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.query(MemberOperationQuery.CheckIfValidMemberByID, [payload.member_id], (err, results) => {
+            if (err) {
+                reject({ checkIfValidMemberByIDError: err });
+                return;
+            }
+
+            const parsed = results as MemberOperation['CheckIfValidMemberByID']['QueryReturnType'];
+
+            if (!parsed.length) {
+                resolve({ found: false, message: 'The member does not exist' });
+                return;
+            }
+
+            resolve({ found: true, payload: parsed[0] });
+        });
+    });
+};
+
+const CheckIfValidMemberByUsername: MemberOperation['CheckIfValidMemberByUsername']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.query(MemberOperationQuery.CheckIfValidMemberByUsername, [payload.username], (err, results) => {
+            if (err) {
+                reject({ checkIfValidMemberByUsernameError: err });
+                return;
+            }
+
+            const parsed = results as MemberOperation['CheckIfValidMemberByUsername']['QueryReturnType'];
+
+            if (!parsed.length) {
+                resolve({ found: false, message: 'The member does not exist' });
+                return;
+            }
+
+            resolve({ found: true, payload: parsed[0] });
+        });
+    });
+};
+
+const CheckIfFollowRequestExists: MemberOperation['CheckIfFollowRequestExists']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.query(MemberOperationQuery.CheckIfFollowRequestExists, [payload.from_member_id, payload.to_affiliate_id], (err, results) => {
+            if (err) {
+                reject({ checkIfFollowRequestExistsError: err });
+                return;
+            }
+
+            const parsed = results as MemberOperation['CheckIfFollowRequestExists']['QueryReturnType'];
+            
+            if (!parsed.length) {
+                resolve({ found: false, message: 'No follow request found' });
+                return;
+            }
+
+            resolve({ found: true, payload: parsed[0] });
+        });
+    });
 };
 
 const CheckIfUsernameMatch: MemberOperation['CheckIfUsernameMatch']['Action'] = (pool, payload) => {
@@ -586,6 +712,130 @@ const CreateFullMember: MemberOperation['CreateFullMember']['Action'] = (pool, p
     });
 };
 
+const Follow: MemberOperation['Follow']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.beginTransaction((err0) => {
+            if (err0) {
+                reject({ followBeginTransactionError: err0 });
+                return;
+            }
+
+            CheckIfValidMemberByID(pool, { member_id: payload.from_member_id })
+            .then((res1) => {
+                if (!res1.found) {
+                    pool.rollback(() => {
+                        resolve({ done: false, message: res1.message });
+                    });
+                    return;
+                }
+
+                if (!res1.payload.has_description) {
+                    resolve({ done: false, message: 'The follower member is not valid' });
+                    return;
+                }
+
+                if (!res1.payload.is_active) {
+                    resolve({ done: false, message: 'The follower member is deleted' });
+                    return;
+                }
+
+                Common.CheckIfValidAffiliateByID(pool, { affiliate_id: payload.to_affiliate_id })
+                .then((res2) => {
+                    if (!res2.found) {
+                        pool.rollback(() => {
+                            resolve({ done: false, message: res2.message });
+                        });
+                        return;
+                    }
+
+                    if (res1.payload.entity_id === res2.payload.entity_id) {
+                        resolve({ done: false, message: 'The follower and followee members can not be the same' });
+                        return;
+                    }
+
+                    if (!res2.payload.has_description && res2.payload.is_member) {
+                        resolve({ done: false, message: 'The followee member is not valid' });
+                        return;
+                    }
+
+                    if (!res2.payload.has_description && res2.payload.is_board) {
+                        resolve({ done: false, message: 'The followee board is not valid' });
+                        return;
+                    }
+
+                    if (!res2.payload.is_active && res2.payload.is_member) {
+                        resolve({ done: false, message: 'The followee member is deleted' });
+                        return;
+                    }
+                    
+                    if (!res2.payload.is_active && res2.payload.is_board) {
+                        resolve({ done: false, message: 'The followee board is deleted' });
+                        return;
+                    }
+
+                    CheckIfFollowRequestExists(pool, { from_member_id: res1.payload.member_id, to_affiliate_id: res2.payload.affiliate_id })
+                    .then((res3) => {
+                        if (res3.found) {
+                            resolve({ done: false, message: 'There\'s is already a follow request created' });
+                            return;
+                        }
+
+                        const values = [
+                            res1.payload.member_id,
+                            res2.payload.affiliate_id,
+                            res2.payload.is_private ? 0 : 1,
+                        ];
+
+                        pool.query(MemberOperationQuery.Follow, values, (err4, results) => {
+                            if (err4) {
+                                pool.rollback(() => {
+                                    reject({ followError: err4 });
+                                });
+                                return;
+                            }
+
+                            const parsed = results as MemberOperation['Follow']['QueryReturnType'];
+
+                            if (!parsed.affectedRows) {
+                                pool.rollback(() => {
+                                    resolve({ done: false, message: 'Could not follow the affiliate' });
+                                });
+                                return;
+                            }
+
+                            pool.commit((err5) => {
+                                if (err5) {
+                                    pool.rollback(() => {
+                                        reject({ followCommitTransactionError: err5 });
+                                    });
+                                    return;
+                                }
+
+                                resolve({ done: true, payload: { member_follow_request_id: parsed.insertId } });
+                            });
+                        });
+                    })
+                    .catch((err3) => {
+                        pool.rollback(() => {
+                            reject(err3);
+                        });
+                    });
+                })
+                .catch((err2) => {
+                    pool.rollback(() => {
+                        reject(err2);
+                    });
+                });
+            })
+            .catch((err1) => {
+                pool.rollback(() => {
+                    reject(err1);
+                });
+            });
+        });
+    });
+};
+
 const UpdateMemberDescription: MemberOperation['UpdateMemberDescription']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
         pool.beginTransaction((err0) => {
@@ -644,7 +894,6 @@ const UpdateMemberDescription: MemberOperation['UpdateMemberDescription']['Actio
                             return;
                         }
 
-
                         resolve({ done: true });
                     });
                 });
@@ -663,6 +912,7 @@ const Members = {
     CreateMinimalMember,
     CreateMemberDescription,
     CreateFullMember,
+    Follow,
     UpdateMemberDescription,
 };
 

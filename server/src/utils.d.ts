@@ -34,6 +34,8 @@ type Entity = {
 
 type Affiliate = Entity & {
     affiliate_id: number;
+    is_member: boolean;
+    is_board: boolean;
 };
 
 type MemberAuth = {
@@ -47,7 +49,7 @@ type MemberDescription = {
     fullname: string;
     bio: string;
     birthdate: Date;
-    is_private: boolean;
+    is_private: boolean | null;
 };
 
 type Member = Affiliate & MemberAuth & MemberDescription & {
@@ -59,6 +61,13 @@ type Member = Affiliate & MemberAuth & MemberDescription & {
 type MemberRegister = Pick<Member, 'username' | 'password'>;
 type MemberLogin = Pick<Member, 'username' | 'password'>;
 type MemberIdentificator = Pick<Member, 'entity_id' | 'affiliate_id' | 'member_id'>;
+
+type MemberFollowRequest = {
+    member_follow_request_id: number;
+    from_member_id: number;
+    to_affiliate_id: number;
+    is_accepted: boolean;
+};
 
 type Post = Entity & {
     post_id: number;
