@@ -42,18 +42,6 @@ enum MemberOperationQuery {
         FROM member_follow_request mfr
         WHERE mfr.from_member_id = ? AND mfr.to_affiliate_id = ?
     `,
-    CheckIfUsernameMatch = `
-        SELECT 
-            IF(e.is_active = 1, TRUE, FALSE) as is_active,
-            e.id AS entity_id,
-            a.id AS affiliate_id,
-            m.id AS member_id
-        FROM entity e
-        JOIN affiliate a ON e.id = a.entity_id
-        JOIN member m ON a.id = m.affiliate_id
-        WHERE m.username = ?
-        LIMIT 1
-    `,
     CheckIfPasswordMatch = `SELECT * FROM member_auth ma WHERE ma.member_id = ? LIMIT 1`,
     CheckIfIDMatch = `
         SELECT
@@ -125,13 +113,6 @@ interface MemberOperation {
             payload: Pick<MemberFollowRequest, 'from_member_id' | 'to_affiliate_id'>,
         ) => Promise<SelectQueryActionReturn<Pick<MemberFollowRequest, 'member_follow_request_id'>>>;
         QueryReturnType: EffectlessQueryResult<Pick<MemberFollowRequest, 'member_follow_request_id'>>;
-    };
-    CheckIfUsernameMatch: {
-        Action: (
-            pool: PoolConnection,
-            payload: Pick<Member, 'username'>,
-        ) => Promise<SelectQueryActionReturn<MemberIdentificator & Pick<Member, 'is_active'>>>;
-        QueryReturnType: EffectlessQueryResult<MemberIdentificator & Pick<Member, 'is_active'>>;
     };
     CheckIfPasswordMatch: {
         Action: (
@@ -268,26 +249,6 @@ const CheckIfFollowRequestExists: MemberOperation['CheckIfFollowRequestExists'][
     });
 };
 
-const CheckIfUsernameMatch: MemberOperation['CheckIfUsernameMatch']['Action'] = (pool, payload) => {
-    return new Promise((resolve, reject) => {
-        pool.query(MemberOperationQuery.CheckIfUsernameMatch, [payload.username], (err, results) => {
-            if (err) {
-                reject({ checkIfUsernameMatchError: err });
-                return;
-            }
-
-            const parsed = results as MemberOperation['CheckIfUsernameMatch']['QueryReturnType'];
-
-            if (!parsed.length) {
-                resolve({ found: false, message: 'Username is available' });
-                return;
-            }
-
-            resolve({ found: true, payload: parsed[0] });
-        });
-    });
-};
-
 const CheckIfPasswordMatch: MemberOperation['CheckIfPasswordMatch']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
         pool.query(MemberOperationQuery.CheckIfPasswordMatch, [payload.member_id], (err0, results) => {
@@ -328,7 +289,7 @@ const CheckIfCredentialsMatch: MemberOperation['CheckIfCredentialsMatch']['Actio
                 return;
             }
 
-            CheckIfUsernameMatch(pool, { username: payload.username })
+            CheckIfValidMemberByUsername(pool, { username: payload.username })
             .then((res1) => {
                 if (!res1.found) {
                     resolve({ found: false, message: 'Could not find a member with that username' });
@@ -510,7 +471,7 @@ const CreateMinimalMember: MemberOperation['CreateMinimalMember']['Action'] = (p
                 return;
             }
 
-            CheckIfUsernameMatch(pool, { username: payload.username })
+            CheckIfValidMemberByUsername(pool, { username: payload.username })
             .then((res1) => {
                 if (res1.found) {
                     pool.rollback(() => {
@@ -607,7 +568,7 @@ const CreateFullMember: MemberOperation['CreateFullMember']['Action'] = (pool, p
                 return;
             }
 
-            CheckIfUsernameMatch(pool, { username: payload.username })
+            CheckIfValidMemberByUsername(pool, { username: payload.username })
             .then((res1) => {
                 if (res1.found) {
                     pool.rollback(() => {
