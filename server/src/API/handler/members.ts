@@ -173,7 +173,7 @@ function Delete(request: Request, response: Response, next: NextFunction): void 
             return;
         }
 
-        Controller.Members.DeleteEntity(connection, { entity_id })
+        Controller.Common.DeleteEntity(connection, { entity_id })
         .then((res) => {
             connection.release();
 

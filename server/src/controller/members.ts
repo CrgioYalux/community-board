@@ -1,7 +1,7 @@
 import type { PoolConnection } from 'mysql';
 
 import bcrypt from 'bcrypt';
-
+import Common from './common';
 import Helper from '../helper';
 
 enum MemberOperationQuery {
@@ -43,8 +43,6 @@ enum MemberOperationQuery {
     GetByIDExtended = ``,
 
     // Create
-    CreateEntity = `INSERT INTO entity VALUES ()`,
-    CreateAffiliate = `INSERT INTO affiliate (entity_id) VALUES (?)`,
     CreateMember = `INSERT INTO member (affiliate_id, username) VALUES (?, ?)`,
     CreateMemberAuth = `INSERT INTO member_auth (member_id, salt, hash) VALUES (?, ?, ?)`,
     CreateMemberDescription = `INSERT INTO member_description (member_id, email, fullname, bio, birthdate, is_private) VALUES (?, ?, ?, ?, ?, IF(? IS NULL, 0, ?))`,
@@ -53,8 +51,7 @@ enum MemberOperationQuery {
     
     // Unfollow
     
-    // Delete
-    DeleteEntity = `UPDATE entity e SET e.is_active = 0 WHERE e.id = ?`,
+    // Delete is handled as entity by common controllers
 
     // Update 
     UpdateMemberDescription = `
@@ -69,11 +66,6 @@ enum MemberOperationQuery {
             md.member_id = ?
     `,
 };
-
-type InsertionQueryActionReturn<T> = { done: true, payload: T } | { done: false, message: string };
-type SelectQueryActionReturn<T> = { found: true, payload: T } | { found: false, message: string };
-type DeleteQueryActionReturn = { done: true } | { done: false, message: string };
-type UpdateQueryActionReturn = { done: true } | { done: false, message: string };
 
 interface MemberOperation {
     CheckIfUsernameMatch: {
@@ -105,19 +97,6 @@ interface MemberOperation {
         QueryReturnType: EffectlessQueryResult<MemberIdentificator & MemberDescription & Pick<Member, 'is_active' | 'has_description'>>;
     };
 
-    CreateEntity: {
-        Action: (
-            pool: PoolConnection,
-        ) => Promise<InsertionQueryActionReturn<Pick<Entity, 'entity_id'>>>;
-        QueryReturnType: EffectfulQueryResult;
-    };
-    CreateAffiliate: {
-        Action: (
-            pool: PoolConnection,
-            payload: Pick<Affiliate, 'entity_id'>,
-        ) => Promise<InsertionQueryActionReturn<Pick<Affiliate, 'affiliate_id'>>>;
-        QueryReturnType: EffectfulQueryResult;
-    };
     CreateMember: {
         Action: (
             pool: PoolConnection,
@@ -151,14 +130,6 @@ interface MemberOperation {
             pool: PoolConnection,
             payload: MemberRegister & Partial<MemberDescription>,
         ) => Promise<InsertionQueryActionReturn<MemberIdentificator>>;
-        QueryReturnType: EffectfulQueryResult;
-    };
-
-    DeleteEntity: {
-        Action: (
-            pool: PoolConnection,
-            payload: Pick<Member, 'entity_id'>,
-        ) => Promise<DeleteQueryActionReturn>;
         QueryReturnType: EffectfulQueryResult;
     };
 
@@ -283,46 +254,6 @@ const CheckIfIDMatch: MemberOperation['CheckIfIDMatch']['Action'] = (pool, paylo
             }
             
             resolve({ found: true, payload: parsed[0] });
-        });
-    });
-};
-
-const CreateEntity: MemberOperation['CreateEntity']['Action'] = (pool) => {
-    return new Promise((resolve, reject) => {
-        pool.query(MemberOperationQuery.CreateEntity, (err, results) => {
-            if (err) {
-                reject({ createEntityError: err });
-                return;
-            }
-
-            const parsed = results as MemberOperation['CreateEntity']['QueryReturnType'];
-
-            if (!parsed.affectedRows) {
-                resolve({ done: false, message: 'Could not create the entity' });
-                return;
-            }
-
-            resolve({ done: true, payload: { entity_id: parsed.insertId } });
-        });
-    });
-};
-
-const CreateAffiliate: MemberOperation['CreateAffiliate']['Action'] = (pool, payload) => {
-    return new Promise((resolve, reject) => {
-        pool.query(MemberOperationQuery.CreateAffiliate, [payload.entity_id], (err, results) => {
-            if (err) {
-                reject({ createAffiliateError: err });
-                return;
-            }
-
-            const parsed = results as MemberOperation['CreateAffiliate']['QueryReturnType'];
-
-            if (!parsed.affectedRows) {
-                resolve({ done: false, message: 'Could not create the affiliate' });
-                return;
-            }
-
-            resolve({ done: true, payload: { affiliate_id: parsed.insertId } });
         });
     });
 };
@@ -462,7 +393,7 @@ const CreateMinimalMember: MemberOperation['CreateMinimalMember']['Action'] = (p
                     return;
                 }
 
-                CreateEntity(pool)
+                Common.CreateEntity(pool)
                 .then((res2) => {
                     if (!res2.done) {
                         pool.rollback(() => {
@@ -471,7 +402,7 @@ const CreateMinimalMember: MemberOperation['CreateMinimalMember']['Action'] = (p
                         return;
                     }
                     
-                    CreateAffiliate(pool, { entity_id: res2.payload.entity_id })
+                    Common.CreateAffiliate(pool, { entity_id: res2.payload.entity_id })
                     .then((res3) => {
                         if (!res3.done) {
                             pool.rollback(() => {
@@ -559,7 +490,7 @@ const CreateFullMember: MemberOperation['CreateFullMember']['Action'] = (pool, p
                     return;
                 }
 
-                CreateEntity(pool)
+                Common.CreateEntity(pool)
                 .then((res2) => {
                     if (!res2.done) {
                         pool.rollback(() => {
@@ -568,7 +499,7 @@ const CreateFullMember: MemberOperation['CreateFullMember']['Action'] = (pool, p
                         return;
                     }
                     
-                    CreateAffiliate(pool, { entity_id: res2.payload.entity_id })
+                    Common.CreateAffiliate(pool, { entity_id: res2.payload.entity_id })
                     .then((res3) => {
                         if (!res3.done) {
                             pool.rollback(() => {
@@ -655,26 +586,6 @@ const CreateFullMember: MemberOperation['CreateFullMember']['Action'] = (pool, p
     });
 };
 
-const DeleteEntity: MemberOperation['DeleteEntity']['Action'] = (pool, payload) => {
-    return new Promise((resolve, reject) => {
-        pool.query(MemberOperationQuery.DeleteEntity, [payload.entity_id], (err, results) => {
-            if (err) {
-                reject({ deleteEntityError: err });
-                return;
-            }
-
-            const parsed = results as MemberOperation['DeleteEntity']['QueryReturnType'];
-
-            if (!parsed.changedRows) {
-                resolve({ done: false, message: 'Could not find an entity with that ID' });
-                return;
-            }
-
-            resolve({ done: true });
-        });
-    });
-};
-
 const UpdateMemberDescription: MemberOperation['UpdateMemberDescription']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
         pool.beginTransaction((err0) => {
@@ -752,7 +663,6 @@ const Members = {
     CreateMinimalMember,
     CreateMemberDescription,
     CreateFullMember,
-    DeleteEntity,
     UpdateMemberDescription,
 };
 

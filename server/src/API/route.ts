@@ -11,9 +11,16 @@ const MEMBERS = {
     PATCH: /^\/api\/members\/(\d+)\/?$/,
 };
 
+const POSTS = {
+    POST: /^\/api\/posts\/?$/,
+    SAVE: /^\/api\/posts\/switch_save\/(\d+)\/?$/,
+    DELETE: /^\/api\/posts\/(\d+)\/?$/,
+};
+
 const ROUTE = {
     PONG,
     MEMBERS,
+    POSTS,
 };
 
 export { ROUTE };

@@ -24,7 +24,7 @@ function create() {
     
     // Authed routes
     app.use(API.Router.Members);
-    // app.use(API.Router.Posts);
+    app.use(API.Router.Posts);
     
     app.use(Middleware.ErrorHandling);
     app.use(Middleware.NotFound);

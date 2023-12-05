@@ -19,6 +19,11 @@ type EffectfulQueryResult = {
 
 type EffectlessQueryResult<T> = T[];
 
+type InsertionQueryActionReturn<T> = { done: true, payload: T } | { done: false, message: string };
+type SelectQueryActionReturn<T> = { found: true, payload: T } | { found: false, message: string };
+type DeleteQueryActionReturn = { done: true } | { done: false, message: string };
+type UpdateQueryActionReturn = { done: true } | { done: false, message: string };
+
 // Database Tables : Development Types
 
 type Entity = {
@@ -54,3 +59,11 @@ type Member = Affiliate & MemberAuth & MemberDescription & {
 type MemberRegister = Pick<Member, 'username' | 'password'>;
 type MemberLogin = Pick<Member, 'username' | 'password'>;
 type MemberIdentificator = Pick<Member, 'entity_id' | 'affiliate_id' | 'member_id'>;
+
+type Post = Entity & {
+    post_id: number;
+    body: string;
+    from_affiliate_id: number;
+};
+
+type PostIdentificator = Pick<Post, 'entity_id' | 'post_id'>;

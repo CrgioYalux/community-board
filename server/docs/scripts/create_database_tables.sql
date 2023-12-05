@@ -94,11 +94,15 @@ CREATE TABLE IF NOT EXISTS post (
 	id INT NOT NULL UNIQUE AUTO_INCREMENT,
     entity_id INT NOT NULL UNIQUE,
     body VARCHAR (255) NOT NULL,
+    from_affiliate_id INT NOT NULL,
     CONSTRAINT pk__post
     PRIMARY KEY (id),
     CONSTRAINT fk__post__entity
     FOREIGN KEY (entity_id)
-    REFERENCES entity (id)
+    REFERENCES entity (id),
+    CONSTRAINT fk__post__affiliate
+    FOREIGN KEY (from_affiliate_id)
+    REFERENCES affiliate (id)
 );
 
 CREATE TABLE IF NOT EXISTS post_saved (
@@ -108,17 +112,6 @@ CREATE TABLE IF NOT EXISTS post_saved (
     FOREIGN KEY (post_id)
     REFERENCES post (id),
     CONSTRAINT fk__post_saved__affiliate
-    FOREIGN KEY (affiliate_id)
-    REFERENCES affiliate (id)
-);
-
-CREATE TABLE IF NOT EXISTS post_membership (
-	post_id INT NOT NULL,
-    affiliate_id INT NOT NULL,
-    CONSTRAINT fk__post_membership__post
-    FOREIGN KEY (post_id)
-    REFERENCES post (id),
-    CONSTRAINT fk__post_membership__affiliate
     FOREIGN KEY (affiliate_id)
     REFERENCES affiliate (id)
 );
@@ -136,7 +129,6 @@ CREATE TABLE IF NOT EXISTS post_comment (
 );
 
 DROP TABLE IF EXISTS post_comment;
-DROP TABLE IF EXISTS post_membership;
 DROP TABLE IF EXISTS post_saved;
 DROP TABLE IF EXISTS post;
 DROP TABLE IF EXISTS board_description;
