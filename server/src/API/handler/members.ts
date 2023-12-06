@@ -42,6 +42,51 @@ function Auth(request: Request<{}, {}, MemberLogin>, response: Response, next: N
     });
 }
 
+function Get(request: Request, response: Response, next: NextFunction): void {
+    db.pool.getConnection((err, connection) => {
+        if (err) {
+            connection.release();
+            
+            const error = new Error('Could not connect to database');
+            next(error);
+
+            return;
+        }
+
+        Controller.Members.GetExtended(connection)
+        .then((res) => {
+            connection.release();
+
+            response.status(200).send(res);
+        })
+        .catch(next);
+    });
+}
+
+function GetByID(request: Request, response: Response, next: NextFunction): void {
+    const member_id = Number(request.params[0]);
+
+    db.pool.getConnection((err, connection) => {
+        if (err) {
+            connection.release();
+            
+            const error = new Error('Could not connect to database');
+            next(error);
+
+            return;
+        }
+
+        Controller.Members.GetExtendedByID(connection, { member_id })
+        .then((res) => {
+            connection.release();
+
+            const status = res.found ? 200 : 404;
+            response.status(status).send(res);
+        })
+        .catch(next);
+    });
+}
+
 function PostMinimal(request: Request<{}, {}, MemberLogin>, response: Response, next: NextFunction): void {
     if (request.body.username === undefined || request.body.password === undefined) {
         response.status(400).send({ message: 'There\'s empty required fields' });
@@ -254,6 +299,8 @@ function Patch(request: Request<Request['params'], {}, Partial<MemberDescription
 
 const Members = {
     Auth,
+    Get,
+    GetByID,
     PostMinimal,
     PostDescription,
     PostFull,

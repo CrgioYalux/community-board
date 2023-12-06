@@ -10,6 +10,8 @@ const MEMBERS = {
     DELETE: /^\/api\/members\/(\d+)\/?$/,
     FOLLOW: /^\/api\/members\/follow\/(\d+)\/?$/,
     PATCH: /^\/api\/members\/(\d+)\/?$/,
+    GET: /^\/api\/members\/?$/,
+    GET_BY_ID: /^\/api\/members\/(\d+)\/?$/,
 };
 
 const POSTS = {

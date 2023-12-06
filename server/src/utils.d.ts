@@ -36,6 +36,7 @@ type Affiliate = Entity & {
     affiliate_id: number;
     is_member: boolean;
     is_board: boolean;
+    followers: number;
 };
 
 type MemberAuth = {
@@ -56,6 +57,7 @@ type Member = Affiliate & MemberAuth & MemberDescription & {
     member_id: number;
     username: string;
     has_description: boolean;
+    followees: number;
 };
 
 type MemberRegister = Pick<Member, 'username' | 'password'>;

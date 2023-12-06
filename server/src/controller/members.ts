@@ -47,8 +47,8 @@ enum MemberOperationQuery {
     // Get
     GetAllAbbreviated = `SELECT m.affiliate_id, md.* FROM member m LEFT JOIN member_description md ON m.id = md.member_id`,
     GetByIDAbbreviated = `SELECT m.affiliate_id, md.* FROM member m LEFT JOIN member_description md ON m.id = md.member_id WHERE m.id = ?`,
-    GetAllExtended = ``,
-    GetByIDExtended = ``,
+    GetExtended = `SELECT * FROM member_extended`,
+    GetExtendedByID = `SELECT * FROM member_extended me WHERE me.member_id = ?`,
 
     // Create
     CreateMember = `INSERT INTO member (affiliate_id, username) VALUES (?, ?)`,
@@ -111,6 +111,20 @@ interface MemberOperation {
             payload: MemberLogin,
         ) => Promise<SelectQueryActionReturn<MemberIdentificator>>;
         QueryReturnType: EffectlessQueryResult<MemberIdentificator>;
+    };
+
+    GetExtended: {
+        Action: (
+            pool: PoolConnection,
+        ) => Promise<SelectQueryActionReturn<Array<MemberIdentificator & MemberDescription & Pick<Member, 'username' | 'followees' | 'followers' | 'created_at' | 'is_private'>>>>;
+        QueryReturnType: EffectlessQueryResult<MemberIdentificator & MemberDescription & Pick<Member, 'username' | 'followees' | 'followers' | 'created_at' | 'is_private'>>;
+    };
+    GetExtendedByID: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<Member, 'member_id'>,
+        ) => Promise<SelectQueryActionReturn<MemberIdentificator & MemberDescription & Pick<Member, 'username' | 'followees' | 'followers' | 'created_at' | 'is_private'>>>;
+        QueryReturnType: EffectlessQueryResult<MemberIdentificator & MemberDescription & Pick<Member, 'username' | 'followees' | 'followers' | 'created_at' | 'is_private'>>;
     };
 
     CreateMember: {
@@ -298,6 +312,46 @@ const CheckIfCredentialsMatch: MemberOperation['CheckIfCredentialsMatch']['Actio
                     reject({ checkIfUsernameMatchError: err1 });
                 });
             });
+        });
+    });
+};
+
+const GetExtended: MemberOperation['GetExtended']['Action'] = (pool) => {
+    return new Promise((resolve, reject) => {
+        pool.query(MemberOperationQuery.GetExtended, (err, results) => {
+            if (err) {
+                reject({ getAllExtendedError: err });
+                return;
+            }
+
+            const parsed = results as MemberOperation['GetExtended']['QueryReturnType'];
+
+            if (!parsed.length) {
+                resolve({ found: false, message: 'No members found' });
+                return;
+            }
+
+            resolve({ found: true, payload: parsed });
+        });
+    });
+};
+
+const GetExtendedByID: MemberOperation['GetExtendedByID']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.query(MemberOperationQuery.GetExtendedByID, [payload.member_id], (err, results) => {
+            if (err) {
+                reject({ getAllExtendedError: err });
+                return;
+            }
+
+            const parsed = results as MemberOperation['GetExtendedByID']['QueryReturnType'];
+
+            if (!parsed.length) {
+                resolve({ found: false, message: 'No member found with that ID' });
+                return;
+            }
+
+            resolve({ found: true, payload: parsed[0] });
         });
     });
 };
@@ -827,6 +881,8 @@ const UpdateMemberDescription: MemberOperation['UpdateMemberDescription']['Actio
 
 const Members = {
     CheckIfCredentialsMatch,
+    GetExtended,
+    GetExtendedByID,
     CreateMinimalMember,
     CreateMemberDescription,
     CreateFullMember,
