@@ -43,22 +43,6 @@ enum MemberOperationQuery {
         WHERE mfr.from_member_id = ? AND mfr.to_affiliate_id = ?
     `,
     CheckIfPasswordMatch = `SELECT * FROM member_auth ma WHERE ma.member_id = ? LIMIT 1`,
-    CheckIfIDMatch = `
-        SELECT
-            IF(e.is_active = 1, TRUE, FALSE) AS is_active,
-            e.id AS entity_id,
-            a.id AS affiliate_id,
-            m.id AS member_id,
-            IF(md.member_id IS NULL, FALSE, TRUE) AS has_description,
-            md.email, md.fullname, md.bio, md.birthdate,
-            IF(md.is_private IS NULL, NULL, IF(md.is_private = 1, TRUE, FALSE)) AS is_private
-        FROM entity e
-        JOIN affiliate a ON e.id = a.entity_id
-        JOIN member m ON a.id = m.affiliate_id
-        LEFT JOIN member_description md ON m.id = md.member_id
-        WHERE m.id = ?
-        LIMIT 1
-    `,
 
     // Get
     GetAllAbbreviated = `SELECT m.affiliate_id, md.* FROM member m LEFT JOIN member_description md ON m.id = md.member_id`,
@@ -127,13 +111,6 @@ interface MemberOperation {
             payload: MemberLogin,
         ) => Promise<SelectQueryActionReturn<MemberIdentificator>>;
         QueryReturnType: EffectlessQueryResult<MemberIdentificator>;
-    };
-    CheckIfIDMatch: {
-        Action: (
-            pool: PoolConnection,
-            payload: Pick<Member, 'member_id'>,
-        ) => Promise<SelectQueryActionReturn<MemberIdentificator & MemberDescription & Pick<Member, 'is_active' | 'has_description'>>>;
-        QueryReturnType: EffectlessQueryResult<MemberIdentificator & MemberDescription & Pick<Member, 'is_active' | 'has_description'>>;
     };
 
     CreateMember: {
@@ -325,26 +302,6 @@ const CheckIfCredentialsMatch: MemberOperation['CheckIfCredentialsMatch']['Actio
     });
 };
 
-const CheckIfIDMatch: MemberOperation['CheckIfIDMatch']['Action'] = (pool, payload) => {
-    return new Promise((resolve, reject) => {
-        pool.query(MemberOperationQuery.CheckIfIDMatch, [payload.member_id], (err, results) => {
-            if (err) {
-                reject({ checkIfMemberIsActiveByIDError: err });
-                return;
-            }
-
-            const parsed = results as MemberOperation['CheckIfIDMatch']['QueryReturnType'];
-
-            if (!parsed.length) {
-                resolve({ found: false, message: 'No member found with that ID' });
-                return;
-            }
-            
-            resolve({ found: true, payload: parsed[0] });
-        });
-    });
-};
-
 const CreateMember: MemberOperation['CreateMember']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
         pool.query(MemberOperationQuery.CreateMember, [payload.affiliate_id, payload.username], (err, results) => {
@@ -402,7 +359,7 @@ const CreateMemberDescription: MemberOperation['CreateMemberDescription']['Actio
                 return;
             }
 
-            CheckIfIDMatch(pool, { member_id: payload.member_id })
+            CheckIfValidMemberByID(pool, { member_id: payload.member_id })
             .then((res1) => {
                 if (!res1.found) {
                     pool.rollback(() => {
@@ -805,7 +762,7 @@ const UpdateMemberDescription: MemberOperation['UpdateMemberDescription']['Actio
                 return;
             }
 
-            CheckIfIDMatch(pool, { member_id: payload.member_id })
+            CheckIfValidMemberByID(pool, { member_id: payload.member_id })
             .then((res1) => {
                 if (!res1.found) {
                     pool.rollback(() => {
