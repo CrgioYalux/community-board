@@ -2,7 +2,6 @@ import type { Request, Response, NextFunction } from 'express';
 
 import Controller from '../../controller';
 import db from '../../db';
-import Helper from '../../helper';
 
 function Get(request: Request, response: Response, next: NextFunction): void {
     db.pool.getConnection((err, connection) => {
@@ -77,12 +76,7 @@ function Delete(request: Request, response: Response, next: NextFunction): void 
         .then((res) => {
             connection.release();
 
-            if (!res.done) {
-                response.status(400).send({ done: false, message: 'Could not delete the member' });
-                return;
-            }
-
-            response.status(200).send({ done: true });
+            response.status(200).send(res);
         })
         .catch(next);
     });
