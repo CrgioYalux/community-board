@@ -1,12 +1,12 @@
 import Pong from './pong';
+import Auth from './auth';
 import Members from './members';
-import Unauth from './unauth';
 import Posts from './posts';
 
 const Router = {
     Pong,
+    Auth,
     Members,
-    Unauth,
     Posts,
 };
 

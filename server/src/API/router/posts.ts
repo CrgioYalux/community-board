@@ -10,4 +10,3 @@ router.delete(ROUTE.POSTS.DELETE, Handler.Posts.Delete);
 router.post(ROUTE.POSTS.SAVE, Handler.Posts.SwitchSaved);
 
 export default router;
-
