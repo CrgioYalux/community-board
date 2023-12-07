@@ -74,7 +74,7 @@ type MemberFollowRequest = {
 type Post = Entity & {
     post_id: number;
     body: string;
-    from_affiliate_id: number;
+    affiliate_id: number;
 };
 
 type PostIdentificator = Pick<Post, 'entity_id' | 'post_id'>;

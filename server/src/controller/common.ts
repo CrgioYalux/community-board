@@ -90,6 +90,11 @@ const CheckIfAlreadySavedByAffiliateID: CommonOperation['CheckIfAlreadySavedByAf
 
 const CheckIfValidAffiliateByID: CommonOperation['CheckIfValidAffiliateByID']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
+        if (payload.affiliate_id < 0) {
+            resolve({ found: false, message: '' });
+            return;
+        }
+
         pool.query(CommonOperationQuery.CheckIfValidAffiliateByID, [payload.affiliate_id], (err, results) => {
             if (err) {
                 reject({ checkIfValidAffiliateByIDError: err });

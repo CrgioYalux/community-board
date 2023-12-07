@@ -3,7 +3,7 @@ import type { Request, Response, NextFunction } from 'express';
 import db from '../../db';
 import Controller from '../../controller';
 
-function Post(request: Request<{}, {}, Pick<Post, 'body'>>, response: Response, next: NextFunction): void {
+function Post(request: Request<{}, {}, Pick<Post, 'body' | 'affiliate_id'>>, response: Response, next: NextFunction): void {
     if (request.body.body === undefined || (request.body.body !== undefined && request.body.body.length === 0)) {
         response.status(400).send({ message: 'There\'s empty required fields' });
         return;
@@ -24,9 +24,12 @@ function Post(request: Request<{}, {}, Pick<Post, 'body'>>, response: Response, 
             return;
         }
 
-        const from_affiliate_id = Number(response.locals.session.affiliate_id);
+        const payload = {
+            body: request.body.body,
+            affiliates: [Number(response.locals.session.affiliate_id), Number(request.body.affiliate_id)].filter(Boolean).map((v) => ({ affiliate_id: v })),
+        };
 
-        Controller.Posts.CreatePost(connection, { body: request.body.body, from_affiliate_id })
+        Controller.Posts.Create(connection, payload)
         .then((res) => {
             connection.release();
             
@@ -47,7 +50,7 @@ function Delete(request: Request, response: Response, next: NextFunction): void 
         return;
     }
 
-    const from_affiliate_id = Number(response.locals.session.affiliate_id);
+    const affiliate_id = Number(response.locals.session.affiliate_id);
     const post_id = Number(request.params[0]);
 
     db.pool.getConnection((err, connection) => {
@@ -60,7 +63,7 @@ function Delete(request: Request, response: Response, next: NextFunction): void 
             return;
         }
 
-        Controller.Posts.DeletePost(connection, { from_affiliate_id, post_id })
+        Controller.Posts.DeletePost(connection, { affiliate_id, post_id })
         .then((res) => {
             connection.release();
 

@@ -4,7 +4,8 @@ import Common from './common';
 enum PostOperationQuery {
     CheckIfPostExists = `SELECT * FROM post p WHERE p.id = ?`,
 
-    CreatePost = `INSERT INTO post (entity_id, body, from_affiliate_id) VALUES (?, ?, ?)`,
+    CreatePost = `INSERT INTO post (entity_id, body) VALUES (?, ?)`,
+    CreatePostMembership = `INSERT INTO post_membership (post_id, affiliate_id) VALUES ?`,
 
     DeletePost = `
         UPDATE entity e
@@ -12,7 +13,8 @@ enum PostOperationQuery {
         WHERE e.id = (
             SELECT p.entity_id
             FROM post p
-            WHERE p.id = ? AND p.from_affiliate_id = ?
+            JOIN post_membership pm ON p.id = pm.post_id
+            WHERE p.id = ? AND pm.affiliate_id = ?
             LIMIT 1
         )
     `,
@@ -33,15 +35,28 @@ interface PostOperation {
     CreatePost: {
         Action: (
             pool: PoolConnection,
-            payload: Pick<Post, 'from_affiliate_id' | 'body'>
-        ) => Promise<InsertionQueryActionReturn<PostIdentificator>>;
+            payload: Pick<Post, 'entity_id' | 'body'>,
+        ) => Promise<InsertionQueryActionReturn<Pick<Post, 'post_id'>>>;
         QueryReturnType: EffectfulQueryResult;
+    };
+    CreatePostMembership: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<Post, 'post_id'> & { affiliates: Array<Pick<Post, 'affiliate_id'>> },
+        ) => Promise<InsertionQueryActionReturn<Pick<Post, 'post_id'> & { affiliates: Array<Pick<Post, 'affiliate_id'>> }>>;
+        QueryReturnType: EffectfulQueryResult;
+    };
+    Create: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<Post, 'body'> & { affiliates: Array<Pick<Post, 'affiliate_id'>> },
+        ) => Promise<InsertionQueryActionReturn<PostIdentificator & { affiliates: Array<Pick<Post, 'affiliate_id'>> }>>;
     };
 
     DeletePost: {
         Action: (
             pool: PoolConnection,
-            payload: Pick<Post, 'post_id' | 'from_affiliate_id'>,
+            payload: Pick<Post, 'post_id' | 'affiliate_id'>,
         ) => Promise<UpdateQueryActionReturn>;
         QueryReturnType: EffectfulQueryResult;
     };
@@ -91,6 +106,54 @@ const CheckIfPostExists: PostOperation['CheckIfPostExists']['Action'] = (pool, p
 
 const CreatePost: PostOperation['CreatePost']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
+        pool.query(PostOperationQuery.CreatePost, [payload.entity_id, payload.body], (err, results) => {
+            if (err) {
+                reject({ createPostError: err });
+                return;
+            }
+
+            const parsed = results as PostOperation['CreatePost']['QueryReturnType'];
+
+            if (!parsed.affectedRows) {
+                resolve({ done: false, message: 'Could not create the post' });
+                return;
+            }
+
+            resolve({ done: true, payload: { post_id: parsed.insertId } });
+        });
+    });
+};
+
+const CreatePostMembership: PostOperation['CreatePostMembership']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        const values = payload.affiliates.map((v) => [payload.post_id, v.affiliate_id]);
+        pool.query(PostOperationQuery.CreatePostMembership, [values], (err, results) => {
+            if (err) {
+                reject({ createPostMembershipError: err });
+                return;
+            }
+
+            const parsed = results as PostOperation['CreatePostMembership']['QueryReturnType'];
+
+            if (!parsed.affectedRows) {
+                resolve({ done: false, message: 'Could not create the post membership' });
+                return;
+            }
+
+            resolve({ done: true, payload });
+        });
+
+
+    });
+};
+
+const Create: PostOperation['Create']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        if (payload.affiliates.length === 0) {
+            resolve({ done: false, message: 'Can not create the post without an affiliates list' });
+            return;
+        }
+
         pool.beginTransaction((err0) => {
             if (err0) {
                 reject({ createPostBeginTransactionError: err0 });
@@ -106,38 +169,160 @@ const CreatePost: PostOperation['CreatePost']['Action'] = (pool, payload) => {
                     return;
                 }
 
-                pool.query(PostOperationQuery.CreatePost, [res1.payload.entity_id, payload.body, payload.from_affiliate_id], (err1, results) => {
-                    if (err1) {
+                CreatePost(pool, { entity_id: res1.payload.entity_id, body: payload.body })
+                .then((res2) => {
+                    if (!res2.done) {
                         pool.rollback(() => {
-                            reject({ createPostError: err1 });
+                            resolve({ done: false, message: res2.message });
                         });
                         return;
                     }
 
-                    const parsed = results as PostOperation['CreatePost']['QueryReturnType'];
-
-                    if (!parsed.affectedRows) {
-                        pool.rollback(() => {
-                            resolve({ done: false, message: 'Could not create the post' });
-                        });
-                        return;
-                    }
-
-                    pool.commit((err3) => {
-                        if (err3) {
+                    Common.CheckIfValidAffiliateByID(pool, { affiliate_id: payload.affiliates[0].affiliate_id })
+                    .then((res3) => {
+                        if (!res3.found) {
                             pool.rollback(() => {
-                                reject({ createPostCommitTransactionError: err3 });
+                                resolve({ done: false, message: res3.message });
                             });
                             return;
                         }
 
-                        resolve({ done: true, payload: { entity_id: res1.payload.entity_id, post_id: parsed.insertId } });
+                        if (!res3.payload.is_active && res3.payload.is_member) {
+                            pool.rollback(() => {
+                                resolve({ done: false, message: 'The member is deleted' });
+                            });
+                            return;
+                        }
+
+                        if (!res3.payload.is_active && res3.payload.is_board) {
+                            pool.rollback(() => {
+                                resolve({ done: false, message: 'The board is deleted' });
+                            });
+                            return;
+                        }
+
+                        if (!res3.payload.has_description && res3.payload.is_member) {
+                            pool.rollback(() => {
+                                resolve({ done: false, message: 'The member is invalid' });
+                            });
+                            return;
+                        }
+
+                        if (!res3.payload.has_description && res3.payload.is_board) {
+                            pool.rollback(() => {
+                                resolve({ done: false, message: 'The board is invalid' });
+                            });
+                            return;
+                        }
+
+                        const aux_affiliate_id = payload.affiliates[1]?.affiliate_id ?? -1;
+
+                        Common.CheckIfValidAffiliateByID(pool, { affiliate_id: aux_affiliate_id })
+                        .then((res4) => {
+                            if (aux_affiliate_id !== -1) {
+                                if (!res4.found) {
+                                    pool.rollback(() => {
+                                        resolve({ done: false, message: res4.message });
+                                    });
+                                    return;
+                                }
+
+                                if (res3.payload.affiliate_id === res4.payload.affiliate_id) {
+                                    pool.rollback(() => {
+                                        resolve({ done: false, message: 'The affiliate IDs are the same' });
+                                    });
+                                    return;
+                                }
+
+                                if (!res4.payload.is_active && res4.payload.is_member) {
+                                    pool.rollback(() => {
+                                        resolve({ done: false, message: 'The member is deleted' });
+                                    });
+                                    return;
+                                }
+
+                                if (!res4.payload.is_active && res4.payload.is_board) {
+                                    pool.rollback(() => {
+                                        resolve({ done: false, message: 'The board is deleted' });
+                                    });
+                                    return;
+                                }
+
+                                if (!res4.payload.has_description && res4.payload.is_member) {
+                                    pool.rollback(() => {
+                                        resolve({ done: false, message: 'The member is invalid' });
+                                    });
+                                    return;
+                                }
+
+                                if (!res4.payload.has_description && res4.payload.is_board) {
+                                    pool.rollback(() => {
+                                        resolve({ done: false, message: 'The board is invalid' });
+                                    });
+                                    return;
+                                }
+
+                                if (res3.payload.is_member && res4.payload.is_member) {
+                                    pool.rollback(() => {
+                                        resolve({ done: false, message: 'Both affiliate IDs refer to members' });
+                                    });
+                                    return;
+                                }
+
+                                if (res3.payload.is_board && res4.payload.is_board) {
+                                    pool.rollback(() => {
+                                        resolve({ done: false, message: 'Both affiliate IDs refer to boards' });
+                                    });
+                                    return;
+                                }
+                            }
+
+                            CreatePostMembership(pool, { post_id: res2.payload.post_id, affiliates: payload.affiliates })
+                            .then((res5) => {
+                                if (!res5.done) {
+                                    pool.rollback(() => {
+                                        resolve({ done: false, message: res5.message });
+                                    });
+                                }
+
+                                pool.commit((err6) => {
+                                    if (err6) {
+                                        pool.rollback(() => {
+                                            reject({ createPostCommitTransactionError: err6 });
+                                        });
+                                        return;
+                                    }
+
+                                    resolve({ done: true, payload: { entity_id: res1.payload.entity_id, post_id: res2.payload.post_id, affiliates: payload.affiliates } });
+                                });
+                            })
+                            .catch((err5) => {
+                                pool.rollback(() => {
+                                    reject(err5);
+                                });
+                            });
+                        })
+                        .catch((err4) => {
+                            pool.rollback(() => {
+                                reject(err4);
+                            });
+                        });
+                    })
+                    .catch((err3) => {
+                        pool.rollback(() => {
+                            reject(err3);
+                        });
+                    });
+                })
+                .catch((err2) => {
+                    pool.rollback(() => {
+                        reject(err2);
                     });
                 });
             })
             .catch((err1) => {
                 pool.rollback(() => {
-                    reject({ createEntityError: err1 });
+                    reject(err1);
                 });
             });
         });
@@ -146,7 +331,7 @@ const CreatePost: PostOperation['CreatePost']['Action'] = (pool, payload) => {
 
 const DeletePost: PostOperation['DeletePost']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
-        pool.query(PostOperationQuery.DeletePost, [payload.post_id, payload.from_affiliate_id], (err, results) => {
+        pool.query(PostOperationQuery.DeletePost, [payload.post_id, payload.affiliate_id], (err, results) => {
             if (err) {
                 reject({ deletePostError: err });
                 return;
@@ -297,7 +482,7 @@ const SwitchSaved: PostOperation['SwitchSaved']['Action'] = (pool, payload) => {
 };
 
 const Posts = {
-    CreatePost,
+    Create,
     DeletePost,
     SwitchSaved,
 };
