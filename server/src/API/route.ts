@@ -14,10 +14,20 @@ const AUTH = {
 
 const MEMBERS = {
     DELETE: /^\/api\/members\/(\d+)\/delete\/?$/,
-    FOLLOW: /^\/api\/members\/(\d+)\/follow\/?$/,
     PATCH: /^\/api\/members\/(\d+)\/edit\/?$/,
     GET: /^\/api\/members\/?$/,
     GET_BY_ID: /^\/api\/members\/(\d+)\/?$/,
+};
+
+const AFFILIATES = {
+    FOLLOW: /^\/api\/affiliates\/(\d+)\/follow\/?$/,
+    UNFOLLOW: /^\/api\/affiliates\/(\d+)\/unfollow\/?$/,
+};
+
+const FOLLOWERS = {
+    GET_REQUESTS: /^\/api\/followers\/requests\/?$/,
+    ACCEPT_FOLLOW: /^\/api\/followers\/requests\/(\d+)\/accept\/?$/,
+    DECLINE_FOLLOW: /^\/api\/followers\/requests\/(\d+)\/decline\/?$/,
 };
 
 const POSTS = {
@@ -30,6 +40,8 @@ const ROUTE = {
     PONG,
     AUTH,
     MEMBERS,
+    AFFILIATES,
+    FOLLOWERS,
     POSTS,
 };
 

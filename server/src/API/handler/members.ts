@@ -81,37 +81,6 @@ function Delete(request: Request, response: Response, next: NextFunction): void 
         .catch(next);
     });
 }
-    
-function Follow(request: Request, response: Response, next: NextFunction): void {
-    if (response.locals.session === undefined || response.locals.session.member_id === undefined) {
-        response.status(400).send({ message: 'There\'s empty required fields' });
-        return;
-    }
-
-    db.pool.getConnection((err, connection) => {
-        if (err) {
-            connection.release();
-
-            const error = new Error('Could not connect to database');
-            next(error);
-
-            return;
-        }
-
-        const payload = {
-            from_member_id: Number(response.locals.session.member_id),
-            to_affiliate_id: Number(request.params[0]),
-        };
-
-        Controller.Members.Follow(connection, payload)
-        .then((res) => {
-            connection.release();
-
-            response.status(200).send(res);
-        })
-        .catch(next);
-    });
-}
 
 function Patch(request: Request<Request['params'], {}, Partial<MemberDescription>>, response: Response, next: NextFunction): void {
     if (response.locals.session === undefined || response.locals.session.entity_id === undefined || response.locals.session.member_id === undefined) {
@@ -150,7 +119,6 @@ const Members = {
     Get,
     GetByID,
     Delete,
-    Follow,
     Patch,
 };
 

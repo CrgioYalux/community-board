@@ -57,8 +57,17 @@ enum MemberOperationQuery {
 
     // Follow
     Follow = `INSERT INTO member_follow_request (from_member_id, to_affiliate_id, is_accepted) VALUES (?, ?, ?)`,
-
-    // Unfollow
+    AcceptFollowRequest = `
+        UPDATE 
+            member_follow_request mfr
+        SET mfr.is_accepted = 1
+        WHERE 
+            mfr.id = ? AND mfr.to_affiliate_id = ?
+    `,
+    DeleteFollowRequest = `
+        DELETE FROM member_follow_request mfr
+        WHERE mfr.id = ? AND mfr.to_affiliate_id = ?
+    `,
     
     // Delete is handled as entity by common controllers
 
@@ -168,6 +177,20 @@ interface MemberOperation {
             pool: PoolConnection,
             payload: Pick<MemberFollowRequest, 'from_member_id' | 'to_affiliate_id'>,
         ) => Promise<InsertionQueryActionReturn<Pick<MemberFollowRequest, 'member_follow_request_id'>>>;
+        QueryReturnType: EffectfulQueryResult;
+    };
+    AcceptFollowRequest: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<MemberFollowRequest, 'member_follow_request_id' | 'to_affiliate_id'>,
+        ) => Promise<InsertionQueryActionReturn<Pick<MemberFollowRequest, 'member_follow_request_id' | 'is_accepted'>>>;
+        QueryReturnType: EffectfulQueryResult;
+    };
+    DeleteFollowRequest: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<MemberFollowRequest, 'member_follow_request_id' | 'to_affiliate_id'>,
+        ) => Promise<DeleteQueryActionReturn>;
         QueryReturnType: EffectfulQueryResult;
     };
 
@@ -808,6 +831,47 @@ const Follow: MemberOperation['Follow']['Action'] = (pool, payload) => {
     });
 };
 
+const AcceptFollowRequest: MemberOperation['AcceptFollowRequest']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.query(MemberOperationQuery.AcceptFollowRequest, [payload.member_follow_request_id, payload.to_affiliate_id], (err, results) => {
+            if (err) {
+                reject({ acceptFollowError: err });
+                return;
+            }
+
+            const parsed = results as MemberOperation['AcceptFollowRequest']['QueryReturnType'];
+
+            if (!parsed.changedRows) {
+                resolve({ done: false, message: 'Could not accept the follow request' });
+                return;
+            }
+
+            resolve({ done: true, payload: { member_follow_request_id: payload.member_follow_request_id, is_accepted: true } });
+        });
+    });
+};
+
+const DeleteFollowRequest: MemberOperation['DeleteFollowRequest']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.query(MemberOperationQuery.DeleteFollowRequest, [payload.member_follow_request_id, payload.to_affiliate_id], (err, results) => {
+            if (err) {
+                reject({ acceptFollowError: err });
+                return;
+            }
+
+            const parsed = results as MemberOperation['DeleteFollowRequest']['QueryReturnType'];
+
+            if (!parsed.affectedRows) {
+                resolve({ done: false, message: 'Could not decline or delete the follow request' });
+                return;
+            }
+
+            resolve({ done: true });
+        });
+    });
+};
+
+
 const UpdateMemberDescription: MemberOperation['UpdateMemberDescription']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
         pool.beginTransaction((err0) => {
@@ -887,6 +951,8 @@ const Members = {
     CreateMemberDescription,
     CreateFullMember,
     Follow,
+    AcceptFollowRequest,
+    DeleteFollowRequest,
     UpdateMemberDescription,
 };
 

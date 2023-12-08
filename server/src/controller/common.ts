@@ -27,6 +27,8 @@ enum CommonOperationQuery {
     CreateAffiliate = `INSERT INTO affiliate (entity_id) VALUES (?)`,
 
     DeleteEntity = `UPDATE entity e SET e.is_active = 0 WHERE e.id = ?`,
+
+    GetAffiliateFollowRequests = `SELECT * FROM affiliate_pending_follow_requests apfr WHERE apfr.followee_affiliate_id = ?`,
 };
 
 interface CommonOperation {
@@ -65,6 +67,14 @@ interface CommonOperation {
             payload: Pick<Member, 'entity_id'>,
         ) => Promise<DeleteQueryActionReturn>;
         QueryReturnType: EffectfulQueryResult;
+    };
+
+    GetAffiliateFollowRequests: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<Affiliate, 'affiliate_id'>,
+        ) => Promise<SelectQueryActionReturn<Array<AffiliateFollowRequest>>>;
+        QueryReturnType: EffectlessQueryResult<AffiliateFollowRequest>;
     };
 };
 
@@ -173,12 +183,33 @@ const DeleteEntity: CommonOperation['DeleteEntity']['Action'] = (pool, payload) 
     });
 };
 
+const GetAffiliateFollowRequests: CommonOperation['GetAffiliateFollowRequests']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.query(CommonOperationQuery.GetAffiliateFollowRequests, [payload.affiliate_id], (err, results) => {
+            if (err) {
+                reject({ getFollowRequestsError: err });
+                return;
+            }
+
+            const parsed = results as CommonOperation['GetAffiliateFollowRequests']['QueryReturnType'];
+
+            if (!parsed.length) {
+                resolve({ found: false, message: 'No follow requests found' });
+                return;
+            }
+
+            resolve({ found: true, payload: parsed });
+        });
+    });
+};
+
 const Common = {
     CheckIfAlreadySavedByAffiliateID,
     CheckIfValidAffiliateByID,
     CreateEntity,
     CreateAffiliate,
     DeleteEntity,
+    GetAffiliateFollowRequests,
 };
 
 export default Common;

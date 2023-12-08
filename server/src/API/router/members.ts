@@ -8,7 +8,6 @@ const router = express.Router();
 router.get(ROUTE.MEMBERS.GET, Handler.Members.Get);
 router.get(ROUTE.MEMBERS.GET_BY_ID, Handler.Members.GetByID);
 router.delete(ROUTE.MEMBERS.DELETE, Handler.Members.Delete);
-router.post(ROUTE.MEMBERS.FOLLOW, Handler.Members.Follow);
 router.patch(ROUTE.MEMBERS.PATCH, Handler.Members.Patch);
 
 export default router;

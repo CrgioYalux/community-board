@@ -50,6 +50,47 @@ JOIN valid_members vm ON mfr.from_member_id = vm.member_id
 JOIN valid_affiliates va ON mfr.to_affiliate_id = va.affiliate_id
 WHERE mfr.is_accepted = 1
 GROUP BY mfr.from_member_id;
+
+CREATE OR REPLACE VIEW member_pending_follow_requests AS
+WITH follower AS (
+	SELECT
+		m.username AS follower_username,
+        m.id AS follower_member_id,
+        mfr.id AS member_follow_request_id
+	FROM member m
+    JOIN member_follow_request mfr ON m.id = mfr.from_member_id
+)
+SELECT
+	mfr.id AS member_follow_request_id,
+	m.id AS followee_member_id,
+    m.username AS followee_username,
+    f.follower_member_id,
+    f.follower_username,
+	mfr.is_accepted
+FROM member_follow_request mfr
+JOIN affiliate a ON a.id = mfr.to_affiliate_id
+JOIN member m ON a.id = m.affiliate_id
+JOIN follower f ON mfr.id = f.member_follow_request_id
+WHERE mfr.is_accepted = 0;
+
+CREATE OR REPLACE VIEW affiliate_pending_follow_requests AS
+WITH follower AS (
+	SELECT
+		m.username AS follower_username,
+        m.id AS follower_member_id,
+        mfr.id AS member_follow_request_id
+	FROM member m
+    JOIN member_follow_request mfr ON m.id = mfr.from_member_id
+)
+SELECT
+	mfr.id AS member_follow_request_id,
+	a.id AS followee_affiliate_id,
+    f.follower_member_id,
+    f.follower_username
+FROM member_follow_request mfr
+JOIN affiliate a ON a.id = mfr.to_affiliate_id
+JOIN follower f ON mfr.id = f.member_follow_request_id
+WHERE mfr.is_accepted = 0;
     
 CREATE OR REPLACE VIEW member_extended AS
 SELECT 

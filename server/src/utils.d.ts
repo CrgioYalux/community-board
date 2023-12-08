@@ -71,6 +71,13 @@ type MemberFollowRequest = {
     is_accepted: boolean;
 };
 
+type AffiliateFollowRequest = {
+    member_follow_request_id: number;
+    followee_affiliate_id: number;
+    follower_member_id: number;
+    follower_username: string;
+};
+
 type Post = Entity & {
     post_id: number;
     body: string;
