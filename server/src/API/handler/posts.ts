@@ -44,6 +44,42 @@ function Post(request: Request<{}, {}, Pick<Post, 'body' | 'affiliate_id'>>, res
     });
 }
 
+function GetByAffiliateID(request: Request, response: Response, next: NextFunction): void {
+    db.pool.getConnection((err, connection) => {
+        if (err) {
+            connection.release();
+            
+            const error = new Error('Could not connect to database');
+            next(error);
+
+            return;
+        }
+
+        const affiliate_id = request.params[0];
+        const parsed_affiliate_id = Number(affiliate_id);
+        const session_affiliate_id = response.locals?.session?.affiliate_id;
+        const session_member_id = Number(response.locals?.session?.member_id);
+
+        const own = affiliate_id === undefined 
+            ? { member_affiliate_id: session_affiliate_id, member_id: session_member_id } 
+            : { member_affiliate_id: undefined, member_id: undefined };
+        const own_board = affiliate_id !== undefined 
+            ? { member_affiliate_id: session_affiliate_id, member_id: session_member_id, board_affiliate_id: parsed_affiliate_id } 
+            : { member_affiliate_id: undefined, member_id: undefined, board_affiliate_id: undefined };
+        const public_world = affiliate_id !== undefined 
+            ? { affiliate_id: parsed_affiliate_id } 
+            : { affiliate_id: undefined };
+
+        Controller.Posts.GetByAffiliateID(connection, { own, own_board, public_world })
+        .then((res) => {
+            connection.release();
+
+            response.status(200).send(res);
+        })
+        .catch(next);
+    });
+}
+
 function Delete(request: Request, response: Response, next: NextFunction): void {
     if (response.locals.session === undefined || response.locals.session.affiliate_id === undefined) {
         response.status(400).send({ message: 'There\'s empty required fields' });
@@ -114,6 +150,7 @@ function SwitchSaved(request: Request, response: Response, next: NextFunction): 
 
 const Posts = {
     Post,
+    GetByAffiliateID,
     Delete,
     SwitchSaved,
 };

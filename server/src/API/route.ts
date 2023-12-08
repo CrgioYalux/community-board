@@ -31,6 +31,8 @@ const FOLLOWERS = {
 };
 
 const POSTS = {
+    GET: /^\/api\/posts\/?$/,
+    GET_BY_AFFILIATE_ID: /^\/api\/posts\/affiliate\/(\d+)\/?$/,
     POST: /^\/api\/posts\/?$/,
     SAVE: /^\/api\/posts\/(\d+)\/switch-save\/?$/,
     DELETE: /^\/api\/posts\/(\d+)\/delete\/?$/,

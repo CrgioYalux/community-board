@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS board (
 
 CREATE TABLE IF NOT EXISTS board_description (
 	board_id INT NOT NULL UNIQUE,
+    title VARCHAR (100) NOT NULL,
     about VARCHAR (255) DEFAULT NULL,
     is_private BIT (1) NOT NULL DEFAULT 0,
     CONSTRAINT fk__board_description__board

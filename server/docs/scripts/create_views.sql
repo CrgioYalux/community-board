@@ -110,3 +110,64 @@ JOIN member_description md ON m.id = md.member_id
 LEFT JOIN member_followees mf ON m.id = mf.member_id 
 LEFT JOIN affiliate_followers af ON m.affiliate_id = af.affiliate_id
 WHERE e.is_active = 1;
+
+CREATE OR REPLACE VIEW member_shortened AS
+SELECT 
+	m.username,
+    a.id AS affiliate_id,
+    m.id AS member_id,
+    md.fullname,
+    IF(md.is_private = 1, TRUE, FALSE) AS is_private,
+	IF(mf.followees IS NULL, 0, mf.followees) AS followees,
+	IF(af.followers IS NULL, 0, af.followers) AS followers
+FROM member m 
+JOIN affiliate a ON a.id = m.affiliate_id
+JOIN entity e ON e.id = a.entity_id
+JOIN member_description md ON m.id = md.member_id
+LEFT JOIN member_followees mf ON m.id = mf.member_id 
+LEFT JOIN affiliate_followers af ON m.affiliate_id = af.affiliate_id
+WHERE e.is_active = 1;
+
+CREATE OR REPLACE VIEW valid_posts AS
+WITH post_times_saved AS (
+	SELECT
+		p.id AS post_id,
+		COUNT(ps.post_id) AS times_saved                                                 
+	FROM post p
+	JOIN post_saved ps ON p.id = ps.post_id
+    GROUP BY (ps.post_id)
+)
+SELECT
+	p.id AS post_id,
+    p.body,
+    e.created_at,
+    IF(pts.times_saved IS NULL, 0, pts.times_saved) AS times_saved
+FROM post p
+JOIN entity e ON e.id = p.entity_id
+LEFT JOIN post_times_saved pts ON p.id = pts.post_id
+WHERE e.is_active = 1;
+
+CREATE OR REPLACE VIEW board_shortened AS
+SELECT
+    a.id AS affiliate_id,
+    b.id AS board_id,
+    bd.title,
+    bd.about,
+    IF(bd.is_private = 1, TRUE, FALSE) AS is_private,
+	IF(af.followers IS NULL, 0, af.followers) AS followers
+FROM board b
+JOIN affiliate a ON b.affiliate_id = a.id
+JOIN entity e ON e.id = a.entity_id
+JOIN board_description bd ON b.id = bd.board_id
+LEFT JOIN affiliate_followers af ON b.affiliate_id = af.affiliate_id
+WHERE e.is_active = 1;
+
+CREATE OR REPLACE VIEW affiliate_posts AS
+SELECT
+    vp.*,
+	ms.member_id, ms.affiliate_id AS member_affiliate_id, ms.fullname, ms.is_private AS member_is_private, ms.followees AS member_followees, ms.followers AS member_followers,
+    bs.board_id, bs.affiliate_id AS board_affiliate_id, bs.title, bs.about, bs.is_private AS board_is_private, bs.followers AS board_followers
+FROM valid_posts vp
+JOIN post_membership pm ON vp.post_id = pm.post_id
+LEFT JOIN member_shortened ms ON ms.affiliate_id = pm.affiliate_id
+LEFT JOIN board_shortened bs ON bs.affiliate_id = pm.affiliate_id;

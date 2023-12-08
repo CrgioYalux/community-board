@@ -85,3 +85,33 @@ type Post = Entity & {
 };
 
 type PostIdentificator = Pick<Post, 'entity_id' | 'post_id'>;
+
+type Board = Affiliate & {
+    board_id: number;
+    from_member_id: numer;
+    title: string;
+    about: string;
+    is_private: boolean;
+};
+
+// VIEWS 
+
+type ViewAffiliatePosts = {
+    post_id: number;
+    body: string;
+    created_at: Date;
+    amount_times_saved: number;
+    member_id: number;
+    member_affiliate_id: number;
+    fullname: string;
+    member_is_private: boolean;
+    member_followees: number;
+    member_followers: number;
+    board_id: number;
+    board_affiliate_id: number;
+    title: string;
+    about: string;
+    board_is_private: boolean;
+    board_followers: number;
+};
+

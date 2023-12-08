@@ -7,6 +7,26 @@ enum PostOperationQuery {
     CreatePost = `INSERT INTO post (entity_id, body) VALUES (?, ?)`,
     CreatePostMembership = `INSERT INTO post_membership (post_id, affiliate_id) VALUES ?`,
 
+    GetByAffiliateID = `
+        SELECT 
+            *
+        FROM affiliate_posts ap 
+        WHERE 
+            (ap.member_affiliate_id = ? AND ap.member_id = ?)
+            OR
+            (ap.member_affiliate_id = ? AND ap.member_id = ? AND ap.board_affiliate_id = ?)
+            OR
+            (
+                (ap.member_affiliate_id = ? OR ap.board_affiliate_id = ?)
+                AND
+                (
+                    (ap.member_is_private = 0 AND ap.board_is_private = 0) 
+                    OR
+                    (ap.member_is_private = 0 AND ap.board_is_private IS NULL)
+                )
+            )
+    `,
+
     DeletePost = `
         UPDATE entity e
         SET e.is_active = 0
@@ -51,6 +71,14 @@ interface PostOperation {
             pool: PoolConnection,
             payload: Pick<Post, 'body'> & { affiliates: Array<Pick<Post, 'affiliate_id'>> },
         ) => Promise<InsertionQueryActionReturn<PostIdentificator & { affiliates: Array<Pick<Post, 'affiliate_id'>> }>>;
+    };
+
+    GetByAffiliateID: {
+        Action: (
+            pool: PoolConnection,
+            payload: { own: Partial<Pick<ViewAffiliatePosts, 'member_affiliate_id' | 'member_id'>> } & { own_board: Partial<Pick<ViewAffiliatePosts, 'member_affiliate_id' | 'member_id' | 'board_affiliate_id'>> } & { public_world: Partial<Pick<Affiliate, 'affiliate_id'>> }
+        ) => Promise<SelectQueryActionReturn<Array<ViewAffiliatePosts>>>;
+        QueryReturnType: EffectlessQueryResult<ViewAffiliatePosts>;
     };
 
     DeletePost: {
@@ -329,6 +357,31 @@ const Create: PostOperation['Create']['Action'] = (pool, payload) => {
     });
 };
 
+const GetByAffiliateID: PostOperation['GetByAffiliateID']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        const values = [
+            payload.own.member_affiliate_id ?? -1, payload.own.member_id ?? -1,
+            payload.own_board.member_affiliate_id ?? -1, payload.own.member_id ?? -1, payload.own_board.board_affiliate_id ?? -1,
+            payload.public_world.affiliate_id ?? -1, payload.public_world.affiliate_id ?? -1,
+        ];
+        pool.query(PostOperationQuery.GetByAffiliateID, values, (err, results) => {
+            if (err) {
+                reject({ getFromAffiliateIDError: err });
+                return;
+            }
+
+            const parsed = results as PostOperation['GetByAffiliateID']['QueryReturnType'];
+
+            if (!parsed.length) {
+                resolve({ found: false, message: 'No posts found from an affiliate with that ID' });
+                return;
+            }
+
+            resolve({ found: true, payload: parsed });
+        });
+    });
+};
+
 const DeletePost: PostOperation['DeletePost']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
         pool.query(PostOperationQuery.DeletePost, [payload.post_id, payload.affiliate_id], (err, results) => {
@@ -483,6 +536,7 @@ const SwitchSaved: PostOperation['SwitchSaved']['Action'] = (pool, payload) => {
 
 const Posts = {
     Create,
+    GetByAffiliateID,
     DeletePost,
     SwitchSaved,
 };
