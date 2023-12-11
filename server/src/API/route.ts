@@ -8,6 +8,7 @@ const AUTH = {
     REGISTER_FULL: /^\/api\/auth\/register\/?$/,
     REGISTER: /^\/api\/auth\/register\/?$/,
     LOGIN: /^\/api\/auth\/login\/?$/,
+    REAUTH: /^\/api\/auth\/reauth\/?$/,
     LOGOUT: /^\/api\/auth\/login\/?$/,
     RESET_PASSWORD: /^\/api\/auth\/login\/?$/,
 };

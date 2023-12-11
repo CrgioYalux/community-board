@@ -3,13 +3,13 @@ import environment from '../environment';
 
 const expiresIn: string = '1d';
 
-function generateAccessToken(member: Pick<Member, 'entity_id' | 'affiliate_id' | 'member_id' | 'username'>): string {
+function generateAccessToken(member: Pick<Member, 'entity_id' | 'affiliate_id' | 'member_id' | 'username'>): { token: string, expiresIn: string | number } {
     const payload: Session = {
         ...member,
         expiresIn,
     };
 
-    return jwt.sign(payload, environment.SECRET_KEY, { expiresIn });
+    return { token: jwt.sign(payload, environment.SECRET_KEY, { expiresIn }), expiresIn };
 };
 
 const generateRandomNumber = (max: number, min: number = 0): number => Math.floor(Math.random() * (max + 1) + min);

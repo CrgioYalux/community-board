@@ -12,6 +12,7 @@ NonAuthenticated.post(ROUTE.AUTH.REGISTER_FULL, Handler.Auth.RegisterFull);
 // router.post(ROUTE.AUTH.LOGOUT, Handler.Members.PostFull);
 // router.post(ROUTE.AUTH.RESET_PASSWORD, Handler.Members.PostFull);
 Authenticated.post(ROUTE.AUTH.REGISTER_DESCRIPTION, Handler.Auth.RegisterDescription);
+Authenticated.post(ROUTE.AUTH.REAUTH, Handler.Auth.ReAuth);
 
 const router = {
     Authenticated,

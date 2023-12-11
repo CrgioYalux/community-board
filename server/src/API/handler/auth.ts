@@ -3,6 +3,7 @@ import type { Request, Response, NextFunction } from 'express';
 import Controller from '../../controller';
 import db from '../../db';
 import Helper from '../../helper';
+import Handler from './index';
 
 function Login(request: Request<{}, {}, MemberLogin>, response: Response, next: NextFunction): void {
     if (request.body.username === undefined || request.body.password === undefined) {
@@ -29,10 +30,10 @@ function Login(request: Request<{}, {}, MemberLogin>, response: Response, next: 
                 return;
             }
 
-            const token = Helper.generateAccessToken({ ...res.payload, username: request.body.username })
+            const access = Helper.generateAccessToken({ ...res.payload, username: request.body.username })
 
             const payload = {
-                token,
+                ...access,
                 ...res.payload,
             };
 
@@ -40,6 +41,18 @@ function Login(request: Request<{}, {}, MemberLogin>, response: Response, next: 
         })
         .catch(next);
     });
+}
+
+function ReAuth(request: Request, response: Response, next: NextFunction): void {
+    if (response.locals.session === undefined || response.locals.session.member_id === undefined) {
+        response.status(400).send({ message: 'There\'s empty required fields' });
+        return;
+    }
+
+    const member_id = response.locals.session.member_id;
+    request.params[0] = member_id;
+
+    Handler.Members.GetByID(request, response, next);
 }
 
 function RegisterMinimal(request: Request<{}, {}, MemberLogin>, response: Response, next: NextFunction): void {
@@ -67,10 +80,10 @@ function RegisterMinimal(request: Request<{}, {}, MemberLogin>, response: Respon
                 return;
             }
 
-            const token = Helper.generateAccessToken({ ...res.payload, username: request.body.username })
+            const access = Helper.generateAccessToken({ ...res.payload, username: request.body.username })
 
             const payload = {
-                token,
+                ...access,
                 ...res.payload,
             };
 
@@ -131,10 +144,10 @@ function RegisterFull(request: Request<{}, {}, MemberLogin & Partial<MemberDescr
                 return;
             }
 
-            const token = Helper.generateAccessToken({ ...res.payload, username: request.body.username })
+            const access = Helper.generateAccessToken({ ...res.payload, username: request.body.username })
 
             const payload = {
-                token,
+                ...access,
                 ...res.payload,
             };
 
@@ -146,6 +159,7 @@ function RegisterFull(request: Request<{}, {}, MemberLogin & Partial<MemberDescr
 
 const Auth = {
     Login,
+    ReAuth,
     RegisterMinimal,
     RegisterDescription,
     RegisterFull,
