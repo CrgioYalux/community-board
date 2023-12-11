@@ -93,10 +93,10 @@ export namespace API {
         };
         Actions: {
             Auth: {
-                Register: (payload: APIAction.Auth.Register.Payload) => Promise<APIAction.Auth.Register.Result>;
-                Login: (payload: APIAction.Auth.Login.Payload) => Promise<APIAction.Auth.Login.Result>;
+                Register: (payload: APIAction.Auth.Register.Payload) => Promise<{ created: true } | { created: false, message: string }>;
+                Login: (payload: APIAction.Auth.Login.Payload) => Promise<{ authenticated: true } | { authenticated: false, message: string }>;
                 Logout: () => void;
-                Reauth: () => Promise<APIAction.Auth.Reauth.Result>;
+                Reauth: () => Promise<{ found: true } | { found: false, message: string }>;
             };
         };
     };
