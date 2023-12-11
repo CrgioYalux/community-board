@@ -1,11 +1,10 @@
-import './App.css';
+import BusinessRouter from './components/BusinessRouter';
 
-function App() {
+const App: React.FC = () => {
   return (
-    <div className='min-h-screen bg-blue-500 grid place-items-center dark:bg-blue-900'>
-      <h1 className='text-4xl'>Hellow</h1>
-    </div>
+    <BusinessRouter />
   );
+
 }
 
 export default App;
