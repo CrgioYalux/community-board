@@ -197,5 +197,6 @@ FROM valid_posts vp
 JOIN post_membership pm ON vp.post_id = pm.post_id
 LEFT JOIN post_saved ps ON vp.post_id = ps.post_id
 LEFT JOIN member_shortened ms ON ms.affiliate_id = pm.affiliate_id
-LEFT JOIN board_shortened bs ON bs.affiliate_id = pm.affiliate_id;
+LEFT JOIN board_shortened bs ON bs.affiliate_id = pm.affiliate_id
+ORDER BY vp.created_at DESC;
 -- WHERE ps.affiliate_id = 1 OR ps.affiliate_id IS NULL;
