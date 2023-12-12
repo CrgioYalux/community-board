@@ -104,6 +104,7 @@ type ViewAffiliatePosts = {
     member_id: number;
     member_affiliate_id: number;
     fullname: string;
+    username: string;
     member_is_private: boolean;
     member_followees: number;
     member_followers: number;

@@ -165,7 +165,7 @@ WHERE e.is_active = 1;
 CREATE OR REPLACE VIEW affiliate_posts AS
 SELECT
     vp.*,
-	ms.member_id, ms.affiliate_id AS member_affiliate_id, ms.fullname, ms.is_private AS member_is_private, ms.followees AS member_followees, ms.followers AS member_followers,
+	ms.member_id, ms.affiliate_id AS member_affiliate_id, ms.username, ms.fullname, ms.is_private AS member_is_private, ms.followees AS member_followees, ms.followers AS member_followers,
     bs.board_id, bs.affiliate_id AS board_affiliate_id, bs.title, bs.about, bs.is_private AS board_is_private, bs.followers AS board_followers
 FROM valid_posts vp
 JOIN post_membership pm ON vp.post_id = pm.post_id
