@@ -25,6 +25,14 @@ enum PostOperationQuery {
             AND
             (af.post_membership_affiliate_id = ?)
     `,
+    GetSaved = `
+        SELECT
+            *
+        FROM
+            affiliate_saved_posts afp
+        WHERE
+            (afp.consultant_affiliate_id = ?)
+    `,
     GetByAffiliateID = `
         SELECT 
             *
@@ -105,6 +113,14 @@ interface PostOperation {
         ) => Promise<SelectQueryActionReturn<Array<ViewAffiliatePosts>>>;
         QueryReturnType: EffectlessQueryResult<ViewAffiliatePosts>;
     };
+    GetSaved: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<ViewAffiliatePosts, 'consultant_affiliate_id'>,
+        ) => Promise<SelectQueryActionReturn<Array<ViewAffiliatePosts>>>;
+        QueryReturnType: EffectlessQueryResult<ViewAffiliatePosts>;
+    };
+    
 
     GetByAffiliateID: {
         Action: (
@@ -430,6 +446,25 @@ const GetFromAffiliateID: PostOperation['GetFromAffiliateID']['Action'] = (pool,
     });
 };
 
+const GetSaved: PostOperation['GetSaved']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.query(PostOperationQuery.GetSaved, [payload.consultant_affiliate_id], (err, results) => {
+            if (err) {
+                reject({ getError: err });
+                return;
+            }
+
+            const parsed = results as PostOperation['Get']['QueryReturnType'];
+
+            if (!parsed.length) {
+                resolve({ found: false, message: 'No posts found' });
+                return;
+            }
+
+            resolve({ found: true, payload: parsed });
+        });
+    });
+};
 
 const GetByAffiliateID: PostOperation['GetByAffiliateID']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
@@ -612,6 +647,7 @@ const Posts = {
     Create,
     Get,
     GetFromAffiliateID,
+    GetSaved,
     GetByAffiliateID,
     DeletePost,
     SwitchSaved,

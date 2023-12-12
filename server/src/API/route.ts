@@ -41,6 +41,7 @@ const POSTS = {
 const FEED = {
     GET: /^\/api\/feed\/?$/,
     GET_FROM_AFFILIATE_ID: /^\/api\/feed\/affiliate\/(\d+)\/?$/,
+    GET_SAVED: /^\/api\/feed\/saved\/?$/,
 };
 
 const ROUTE = {

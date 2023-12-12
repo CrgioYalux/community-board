@@ -176,13 +176,16 @@ CREATE OR REPLACE VIEW affiliate_saved_posts AS
 SELECT
     vp.*,
     ps.affiliate_id AS saver_affiliate_id,
+	ps.affiliate_id AS consultant_affiliate_id,
+    IF(ps.affiliate_id IS NULL, FALSE, TRUE) AS saved_by_consultant,
 	ms.member_id, ms.affiliate_id AS member_affiliate_id, ms.username, ms.fullname, ms.is_private AS member_is_private, ms.followees AS member_followees, ms.followers AS member_followers,
     bs.board_id, bs.affiliate_id AS board_affiliate_id, bs.title, bs.about, bs.is_private AS board_is_private, bs.followers AS board_followers
 FROM valid_posts vp
 JOIN post_saved ps ON vp.post_id = ps.post_id
 JOIN post_membership pm ON vp.post_id = pm.post_id
 LEFT JOIN member_shortened ms ON ms.affiliate_id = pm.affiliate_id
-LEFT JOIN board_shortened bs ON bs.affiliate_id = pm.affiliate_id;
+LEFT JOIN board_shortened bs ON bs.affiliate_id = pm.affiliate_id
+ORDER BY vp.created_at DESC;
 -- WHERE ps.affiliate_id = 1;
 
 CREATE OR REPLACE VIEW affiliate_feed AS

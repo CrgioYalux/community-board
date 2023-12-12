@@ -7,5 +7,6 @@ const router = express.Router();
 
 router.get(ROUTE.FEED.GET, Handler.Feed.Get);
 router.get(ROUTE.FEED.GET_FROM_AFFILIATE_ID, Handler.Feed.GetFromAffiliateID);
+router.get(ROUTE.FEED.GET_SAVED, Handler.Feed.GetSaved);
 
 export default router;
