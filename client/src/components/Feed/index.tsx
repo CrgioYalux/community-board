@@ -1,30 +1,18 @@
 import type { Post } from "../../providers/API/types";
 
-import { useEffect, useState, useRef } from "react";
 import { useAPI } from "../../providers/API";
 
 import Box from "../Icons/Box";
 
-const Feed: React.FC = ({ }) => {
-    const [posts, setPosts] = useState<Post[]>([]);
-    const requestResponseSpanRef = useRef<HTMLSpanElement | null>(null);
+interface FeedProps {
+    posts: Post[];
+    setPosts: React.Dispatch<React.SetStateAction<Post[]>>;
+    loading: boolean;
+    error?: string;
+};
 
+const Feed: React.FC<FeedProps> = ({ posts, setPosts, loading, error = '' }) => {
     const API = useAPI();
-
-    useEffect(() => {
-        API.Actions.Feed.Get()
-        .then((res) => {
-            if (res.found) {
-                setPosts(res.posts);
-                return;
-            }
-        })
-        .catch(() => {
-            if (requestResponseSpanRef.current) {
-                requestResponseSpanRef.current.textContent = 'An error occurred while fetching posts';
-            }
-        });
-    }, []);
 
     const switchSaveOnPost = (post_id: number): void => {
         API.Actions.Posts.SwitchSave({ post_id })
@@ -44,7 +32,7 @@ const Feed: React.FC = ({ }) => {
         .catch(() => {});
     };
 
-    if (API.Value.fetching)
+    if (API.Value.fetching || loading)
         return (
             <div className='flex-auto grid place-items-center'>
                 <span className='text-2xl font-bold tracking-wide'>Looking for posts...</span>        
@@ -56,7 +44,7 @@ const Feed: React.FC = ({ }) => {
             <div className='flex-auto grid place-items-center'>
                 <div className='flex flex-col gap-2 items-center text-2xl'>
                     <span className='font-bold tracking-wide'>No posts to show</span>
-                    <span ref={requestResponseSpanRef} className='text-red-400'>An error occurred while fetching posts</span>
+                    <span className='text-red-400'>{error}</span>
                 </div>
             </div>
         );

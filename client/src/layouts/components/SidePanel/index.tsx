@@ -1,26 +1,33 @@
+import { useAPI } from "../../../providers/API";
+import { useLocation, Link } from 'react-router-dom';
+
 import Divider from "../Divider";
 import ThemeSwitch from "../ThemeSwitch";
 import LockIcon from '../../../components/Icons/Lock';
-import { useAPI } from "../../../providers/API";
+
+const pages = ['home', 'saved', 'boards'];
 
 const SidePanel: React.FC = () => {
     const API = useAPI();
+    const location = useLocation();
+
+    const isInPage = (page: string) => location.pathname.split('/').includes(page);
 
     return (
         <div className='grow-0 shrink-0 basis-1/5 min-h-full flex flex-col'>
             <ul className='my-auto flex flex-col text-4xl text-blue-900 dark:text-blue-200'>
-                <li className='w-full py-2 pl-4 hover:cursor-pointer hover:bg-blue-100/[.75] dark:hover:bg-blue-800/[.75]'>
-                    <span className='w-[6ch]'>home</span>
-                </li>
-                <Divider className='w-full h-1' />
-                <li className='w-full py-2 pl-4 hover:cursor-pointer hover:bg-blue-100/[.75] dark:hover:bg-blue-800/[.75]'>
-                    <span className='w-[6ch]'>saved</span>
-                </li>
-                <Divider className='w-full h-1' />
-                <li className='w-full py-2 pl-4 hover:cursor-pointer hover:bg-blue-100/[.75] dark:hover:bg-blue-800/[.75]'>
-                    <span className='w-[6ch]'>boards</span>
-                </li>
-                <Divider className='w-full h-1' />
+                {pages.map((page, i) => (
+                    <>
+                        <Link 
+                        key={i}
+                        className={`w-full py-2 pl-4 hover:cursor-pointer ${isInPage(page) ? 'bg-blue-600 text-blue-200 dark:text-blue-900' : 'hover:bg-blue-400/[.50] dark:hover:bg-blue-700/[.50]'}`}
+                        to={`/${page}`}
+                        >
+                            <span className='w-[6ch]'>{page}</span>
+                        </Link>
+                        <Divider className='w-full h-1' />
+                    </>
+                ))}
             </ul>  
             <div className='w-full h-1/5 p-2 pr-0'>
                 <div className='w-full h-full flex flex-col bg-blue-900 dark:bg-blue-200 rounded'>

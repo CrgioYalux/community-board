@@ -114,6 +114,15 @@ export namespace APIAction {
                 message: string;
             };
         };
+        namespace GetSaved {
+            type Result = {
+                found: true;
+                payload: Array<Post>;
+            } | {
+                found: false;
+                message: string;
+            };
+        };
     };
 };
 
@@ -147,6 +156,7 @@ export namespace API {
             };
             Feed: {
                 Get: () => Promise<{ found: true, posts: Post[] } | { found: false, message: string }>;
+                GetSaved: () => Promise<{ found: true, posts: Post[] } | { found: false, message: string }>;
             };
         };
     };

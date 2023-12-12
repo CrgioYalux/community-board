@@ -5,7 +5,7 @@ import { useAPI } from '../../providers/API';
 
 import Feed from "../../components/Feed";
 
-const Home: React.FC = () => {
+const Saved: React.FC = () => {
     const [posts, setPosts] = useState<Post[]>([]);
     const [error, setError] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(true);
@@ -13,7 +13,7 @@ const Home: React.FC = () => {
     const API = useAPI();
 
     useEffect(() => {
-        API.Actions.Feed.Get()
+        API.Actions.Feed.GetSaved()
         .then((res) => {
             if (res.found) {
                 setPosts(res.posts);
@@ -41,4 +41,4 @@ const Home: React.FC = () => {
     )
 };
 
-export default Home;
+export default Saved;

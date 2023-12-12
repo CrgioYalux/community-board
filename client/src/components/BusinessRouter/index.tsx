@@ -2,11 +2,12 @@ import { Routes, Route, Outlet, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAPI } from '../../providers/API';
 
-import Login from "../../pages/Login";
-import LoggedLayout from "../../layouts/Logged";
 import SkeletonLayout from "../../layouts/Skeleton";
+import LoggedLayout from "../../layouts/Logged";
+import Login from "../../pages/Login";
 import Register from '../../pages/Register';
 import Home from '../../pages/Home';
+import Saved from '../../pages/Saved';
 
 const BusinessRouter: React.FC = () => {
     const API = useAPI();
@@ -43,6 +44,9 @@ const BusinessRouter: React.FC = () => {
                 <Route element={API.Value.logged ? <Outlet /> : <Navigate to='auth' />}>
                     <Route path='home' element={<LoggedLayout><Outlet /></LoggedLayout>}>
                         <Route index element={<Home />} />
+                    </Route>
+                    <Route path='saved' element={<LoggedLayout><Outlet /></LoggedLayout>}>
+                        <Route index element={<Saved />} />
                     </Route>
                 </Route>
             <Route path='auth' element={API.Value.logged ? <Navigate to='/' /> : <Outlet />}>

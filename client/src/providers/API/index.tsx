@@ -186,6 +186,36 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     });
                 });
             },
+            GetSaved() {
+                return new Promise((resolve, reject) => {
+                    const token = utils.GetToken();
+
+                    if (token === undefined) {
+                        reject({ feedGetSavedError: 'No token found' });
+                        return;
+                    }
+
+                    setFetching(true);
+
+                    axios.get<APIAction.Feed.GetSaved.Result>(`${API_BASE_PATH}/feed/saved`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    })
+                    .then((res) => {
+                        if (!res.data.found) {
+                            resolve({ found: false, message: res.data.message });
+                            return;
+                        }
+
+                        resolve({ found: true, posts: res.data.payload });
+                    })
+                    .catch((err) => {
+                        reject({ feedGetSavedError: err });
+                    })
+                    .finally(() => {
+                        setFetching(false);
+                    });
+                });
+            },
         },
     };
 
