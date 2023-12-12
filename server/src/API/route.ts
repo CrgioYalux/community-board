@@ -33,10 +33,14 @@ const FOLLOWERS = {
 
 const POSTS = {
     GET: /^\/api\/posts\/?$/,
-    GET_BY_AFFILIATE_ID: /^\/api\/posts\/affiliate\/(\d+)\/?$/,
     POST: /^\/api\/posts\/?$/,
-    SAVE: /^\/api\/posts\/(\d+)\/switch-save\/?$/,
+    SWITCH_SAVE: /^\/api\/posts\/(\d+)\/switch-save\/?$/,
     DELETE: /^\/api\/posts\/(\d+)\/delete\/?$/,
+};
+
+const FEED = {
+    GET: /^\/api\/feed\/?$/,
+    GET_FROM_AFFILIATE_ID: /^\/api\/feed\/affiliate\/(\d+)\/?$/,
 };
 
 const ROUTE = {
@@ -46,6 +50,7 @@ const ROUTE = {
     AFFILIATES,
     FOLLOWERS,
     POSTS,
+    FEED,
 };
 
 export { ROUTE };

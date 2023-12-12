@@ -101,6 +101,9 @@ type ViewAffiliatePosts = {
     body: string;
     created_at: Date;
     amount_times_saved: number;
+    consultant_affiliate_id: number;
+    saved_by_consultant: boolean;
+    post_membership_affiliate_id: number;
     member_id: number;
     member_affiliate_id: number;
     fullname: string;

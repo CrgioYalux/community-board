@@ -19,16 +19,16 @@ function create() {
     // Unauthed routes
     app.use(API.Router.Pong);
     app.use(API.Router.Auth.NonAuthenticated);
-    app.use(API.Router.Posts.NonAuthenticated);
     
     app.use(Middleware.Auth);
     
     // Authed routes
     app.use(API.Router.Auth.Authenticated);
-    app.use(API.Router.Posts.NonAuthenticated);
     app.use(API.Router.Members);
     app.use(API.Router.Affiliates);
     app.use(API.Router.Followers);
+    app.use(API.Router.Posts);
+    app.use(API.Router.Feed);
     
     app.use(Middleware.ErrorHandling);
     app.use(Middleware.NotFound);
