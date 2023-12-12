@@ -1,4 +1,4 @@
-import { API, APIAction, SessionData, MemberExtended } from './types';
+import { API, APIAction, MemberExtended } from './types';
 
 import Cookies from 'js-cookie';
 import CryptoJS from 'crypto-js';
@@ -22,7 +22,6 @@ const utils: API.Utils = {
 };
 
 const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [session, setSession] = useState<SessionData | null>(null);
     const [member, setMember] = useState<MemberExtended | null>(null);
     const [logged, setLogged] = useState<boolean>(false);
     const [fetching, setFetching] = useState<boolean>(false);
@@ -31,17 +30,20 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const Actions: API.Context['Actions'] = {
         Auth: {
             Register(payload) {
-                return new Promise((resolve) => {
+                return new Promise((resolve, reject) => {
                     setFetching(true);
 
-                    axios.post(`${API_BASE_PATH}/auth/register`, payload)
+                    axios.post<APIAction.Auth.Register.Result>(`${API_BASE_PATH}/auth/register`, payload)
                     .then((res) => {
-                        if (res.status === 201) {
-                            resolve({ created: true });
+                        if (!res.data.created) {
+                            resolve({ created: false, message: res.data.message });
+                            return;
                         }
+
+                        resolve({ created: true });
                     })
                     .catch((err) => {
-                        resolve({ created: false, message: err });
+                        reject({ authRegisterError: err });
                     })
                     .finally(() => {
                         setFetching(false);
@@ -59,8 +61,7 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                             return;
                         }
 
-                        const { token, expiresIn, ...rest } = res.data.payload;
-                        setSession(rest);
+                        const { token, expiresIn } = res.data.payload;
 
                         const encrypted = CryptoJS.AES.encrypt(CryptoJS.enc.Utf8.parse(token), SECRET_KEY).toString();
                         const expires = Number(expiresIn.replace(/([A-Za-z])/gi, ''));
@@ -71,22 +72,21 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                         })
                         .then((res1) => {
                             if (!res1.data.found) {
-                                resolve({ authenticated: false, message: 'Could not find the member' });
+                                resolve({ authenticated: false, message: res1.data.message });
                                 return;
                             }
                                 
                             setMember(res1.data.payload);
                             setLogged(true);
+
                             resolve({ authenticated: true }); 
                         })
                         .catch((err) => {
-                            resolve({ authenticated: false, message: err });
+                            reject({ authLoginError: err });
                         });
-
                     })
                     .catch((err) => {
-                        console.error({ loginError: err });
-                        reject(err);
+                        reject({ authLoginError: err });
                     })
                     .finally(() => {
                         setFetching(false);
@@ -94,7 +94,7 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 });
             },
             Logout() {
-                setSession(null);
+                setMember(null);
                 setLogged(false);
                 Cookies.remove(COOKIE_KEY);
             },
@@ -103,7 +103,7 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     const token = utils.GetToken();
 
                     if (token === undefined) {
-                        resolve({ found: false, message: '' });
+                        reject({ authReauthError: 'No token found' });
                         return;
                     }
 
@@ -124,9 +124,7 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                         resolve({ found: true });
                     })
                     .catch((err) => {
-                        resolve({ found: false, message: err });
-                        console.error({ reauthError: err });
-                        reject(err);
+                        reject({ authReauthError: err });
                     })
                     .finally(() => {
                         setTryingReauth(false);
@@ -135,9 +133,63 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 });
             },
         },
+        Posts: {
+            SwitchSave(payload) {
+                return new Promise((resolve, reject) => {
+                    const token = utils.GetToken();
+
+                    if (token === undefined) {
+                        reject({ postsSwitchSaveError: 'No token found' });
+                        return;
+                    }
+
+                    axios.patch<APIAction.Post.SwitchSave.Result>(`${API_BASE_PATH}/posts/${payload.post_id}/switch-save`, {}, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    })
+                    .then((res) => {
+                        resolve(res.data);
+                    })
+                    .catch((err) => {
+                        reject({ postsSwitchSaveError: err });
+                    });
+                });
+            },
+        },
+        Feed: {
+            Get() {
+                return new Promise((resolve, reject) => {
+                    const token = utils.GetToken();
+
+                    if (token === undefined) {
+                        reject({ feedGetError: 'No token found' });
+                        return;
+                    }
+
+                    setFetching(true);
+
+                    axios.get<APIAction.Feed.Get.Result>(`${API_BASE_PATH}/feed`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    })
+                    .then((res) => {
+                        if (!res.data.found) {
+                            resolve({ found: false, message: res.data.message });
+                            return;
+                        }
+
+                        resolve({ found: true, posts: res.data.payload });
+                    })
+                    .catch((err) => {
+                        reject({ feedGetError: err });
+                    })
+                    .finally(() => {
+                        setFetching(false);
+                    });
+                });
+            },
+        },
     };
 
-    const Value = { logged, session, fetching, member, tryingReauth } as API.Context['Value'];
+    const Value = { logged, fetching, member, tryingReauth } as API.Context['Value'];
 
     const value: API.Context = {
         Value,

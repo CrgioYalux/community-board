@@ -26,19 +26,19 @@ const SidePanel: React.FC = () => {
                 <div className='w-full h-full flex flex-col bg-blue-900 dark:bg-blue-200 rounded'>
                     <div className='flex flex-row text-blue-200 dark:text-blue-900 p-2'>
                         <div className='flex flex-col font-semibold'>
-                            <span className='text-xl w-[16ch] truncate'>John Locke</span>
-                            <span className='text-sm w-[14ch] truncate'>#john_locke</span>
+                            <span className='text-xl w-[16ch] truncate'>{API.Value.member?.fullname}</span>
+                            <span className='text-sm w-[14ch] truncate'>#{API.Value.member?.username}</span>
                         </div>
                         <span className='text-blue-200 text-blue-200 dark:text-blue-900 fill-current grid place-items-center h-8 w-8 ml-auto p-2'>
-                            <LockIcon />
+                        {API.Value.member?.is_private ? <LockIcon /> : ''}
                         </span>
                     </div>
                     <div className='flex flex-row gap-2 text-sm text-blue-200 dark:text-blue-900 px-2'>
                         <span className='tracking-wider'>
-                            <span className='font-bold tracking-normal'>1K</span> Followers
+                            <span className='font-bold tracking-normal'>{API.Value.member?.followers}</span> Followers
                         </span>
                         <span className='tracking-widest'>
-                            <span className='font-bold tracking-normal'>500</span> Following
+                            <span className='font-bold tracking-normal'>{API.Value.member?.followees}</span> Following
                         </span>
                     </div>
                     <div className='flex flex-row items-center mt-auto'>

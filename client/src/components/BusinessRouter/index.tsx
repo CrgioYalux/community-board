@@ -6,6 +6,7 @@ import Login from "../../pages/Login";
 import LoggedLayout from "../../layouts/Logged";
 import SkeletonLayout from "../../layouts/Skeleton";
 import Register from '../../pages/Register';
+import Home from '../../pages/Home';
 
 const BusinessRouter: React.FC = () => {
     const API = useAPI();
@@ -41,7 +42,7 @@ const BusinessRouter: React.FC = () => {
             <Route path='/' element={<SkeletonLayout><Outlet /></SkeletonLayout>}>
                 <Route element={API.Value.logged ? <Outlet /> : <Navigate to='auth' />}>
                     <Route path='home' element={<LoggedLayout><Outlet /></LoggedLayout>}>
-                        <Route index element={<div>feed here</div>} />
+                        <Route index element={<Home />} />
                     </Route>
                 </Route>
             <Route path='auth' element={API.Value.logged ? <Navigate to='/' /> : <Outlet />}>
