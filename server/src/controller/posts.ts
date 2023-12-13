@@ -9,21 +9,22 @@ enum PostOperationQuery {
 
     Get = `
         SELECT 
-            *
-        FROM
-            affiliate_feed af 
-        WHERE 
-            (af.consultant_affiliate_id = ? OR af.consultant_affiliate_id IS NULL)
+            ps.affiliate_id AS consultant_affiliate_id,
+            IF(ps.affiliate_id IS NULL, FALSE, TRUE) AS saved_by_consultant,
+            f.*
+        FROM feed f
+        LEFT JOIN post_saved ps ON ps.post_id = f.post_id AND ps.affiliate_id = ?
+        ORDER BY f.created_at DESC
     `,
     GetFromAffiliateID = `
         SELECT 
-            *
-        FROM
-            affiliate_feed af 
-        WHERE 
-            (af.consultant_affiliate_id = ? OR af.consultant_affiliate_id IS NULL)
-            AND
-            (af.post_membership_affiliate_id = ?)
+            ps.affiliate_id AS consultant_affiliate_id,
+            IF(ps.affiliate_id IS NULL, FALSE, TRUE) AS saved_by_consultant,
+            f.*
+        FROM feed f
+        LEFT JOIN post_saved ps ON ps.post_id = f.post_id AND ps.affiliate_id = ?
+        WHERE (f.post_membership_affiliate_id = ?)
+        ORDER BY f.created_at DESC
     `,
     GetSaved = `
         SELECT

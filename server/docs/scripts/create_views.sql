@@ -188,21 +188,27 @@ LEFT JOIN board_shortened bs ON bs.affiliate_id = pm.affiliate_id
 ORDER BY vp.created_at DESC;
 -- WHERE ps.affiliate_id = ?;
 
-CREATE OR REPLACE VIEW affiliate_feed AS
+CREATE OR REPLACE VIEW feed AS
 SELECT
-    vp.*,
-    pm.affiliate_id AS post_membership_affiliate_id,
-    ps.affiliate_id AS consultant_affiliate_id,
-    IF(ps.affiliate_id IS NULL, FALSE, TRUE) AS saved_by_consultant,
+	vp.*,
+	pm.affiliate_id AS post_membership_affiliate_id,
 	ms.affiliate_id AS member_affiliate_id, ms.username, ms.fullname, ms.is_private AS member_is_private, ms.followees AS member_followees, ms.followers AS member_followers,
-    bs.affiliate_id AS board_affiliate_id, bs.title, bs.about, bs.is_private AS board_is_private, bs.followers AS board_followers
+	bs.affiliate_id AS board_affiliate_id, bs.title, bs.about, bs.is_private AS board_is_private, bs.followers AS board_followers
 FROM valid_posts vp
 JOIN post_membership pm ON vp.post_id = pm.post_id
-LEFT JOIN post_saved ps ON vp.post_id = ps.post_id
 LEFT JOIN member_shortened ms ON ms.affiliate_id = pm.affiliate_id
-LEFT JOIN board_shortened bs ON bs.affiliate_id = pm.affiliate_id
-ORDER BY vp.created_at DESC;
--- WHERE ps.affiliate_id = ? OR ps.affiliate_id IS NULL;
+LEFT JOIN board_shortened bs ON bs.affiliate_id = pm.affiliate_id;
+
+/*
+CREATE OR REPLACE VIEW affiliate_feed AS
+SELECT 
+	ps.affiliate_id AS consultant_affiliate_id,
+	IF(ps.affiliate_id IS NULL, FALSE, TRUE) AS saved_by_consultant,
+	f.*
+FROM feed f
+LEFT JOIN post_saved ps ON ps.post_id = f.post_id AND ps.affiliate_id = ?
+WHERE (f.post_membership_affiliate_id = ?);
+*/
 
 CREATE OR REPLACE VIEW member_from_member_pov AS
 SELECT 
