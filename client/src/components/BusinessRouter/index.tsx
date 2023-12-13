@@ -1,4 +1,4 @@
-import { Routes, Route, Outlet, Navigate } from 'react-router-dom';
+import { Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAPI } from '../../providers/API';
 
@@ -8,6 +8,8 @@ import Login from "../../pages/Login";
 import Register from '../../pages/Register';
 import Home from '../../pages/Home';
 import Saved from '../../pages/Saved';
+import MemberByID from '../../pages/MemberByID';
+import NotFound from '../../pages/NotFound';
 
 const BusinessRouter: React.FC = () => {
     const API = useAPI();
@@ -21,7 +23,7 @@ const BusinessRouter: React.FC = () => {
 
         const credibleTimeout = setTimeout(() => {
             setLoading(false);
-        }, 1000);
+        }, 500);
 
         return () => {
             clearTimeout(credibleTimeout);
@@ -39,22 +41,24 @@ const BusinessRouter: React.FC = () => {
 
     return (
         <Routes>
-            <Route path='/' element={API.Value.logged ? <Navigate to='/home' /> : <Navigate to='auth' />} />
+            {/*<Route path='/' element={API.Value.logged ? <Navigate to='/home' /> : <Navigate to='auth' />} />*/}
             <Route path='/' element={<SkeletonLayout><Outlet /></SkeletonLayout>}>
-                <Route element={API.Value.logged ? <Outlet /> : <Navigate to='auth' />}>
-                    <Route path='home' element={<LoggedLayout><Outlet /></LoggedLayout>}>
+                <Route index element={API.Value.logged ? <Navigate to='/home' /> : <Navigate to='auth' />} />
+                <Route element={API.Value.logged ? <LoggedLayout><Outlet /></LoggedLayout> : <Navigate to='auth' />}>
+                    <Route path='home'>
                         <Route index element={<Home />} />
                     </Route>
-                    <Route path='saved' element={<LoggedLayout><Outlet /></LoggedLayout>}>
+                    <Route path='saved'>
                         <Route index element={<Saved />} />
                     </Route>
+                    <Route path='members/:username' element={<MemberByID />}/>
                 </Route>
             <Route path='auth' element={API.Value.logged ? <Navigate to='/' /> : <Outlet />}>
                 <Route index element={<Navigate to='/auth/login' />} />
                 <Route path='login' element={<Login />} />
                 <Route path='register' element={<Register />} />
             </Route>
-            <Route path='*' element={<>404</>} />
+            <Route path='*' element={<NotFound />} />
             </Route>
         </Routes>
     );

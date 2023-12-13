@@ -143,7 +143,7 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                         return;
                     }
 
-                    axios.patch<APIAction.Post.SwitchSave.Result>(`${API_BASE_PATH}/posts/${payload.post_id}/switch-save`, {}, {
+                    axios.patch<APIAction.Posts.SwitchSave.Result>(`${API_BASE_PATH}/posts/${payload.post_id}/switch-save`, {}, {
                         headers: { Authorization: `Bearer ${token}` },
                     })
                     .then((res) => {
@@ -214,6 +214,69 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     .finally(() => {
                         setFetching(false);
                     });
+                });
+            },
+            GetFromAffiliateID(payload) {
+                return new Promise((resolve, reject) => {
+                    const token = utils.GetToken();
+
+                    if (token === undefined) {
+                        reject({ feedGetFromAffiliateIDError: 'No token found' });
+                        return;
+                    }
+
+                    setFetching(true);
+
+                    axios.get<APIAction.Feed.GetFromAffiliateID.Result>(`${API_BASE_PATH}/feed/affiliate/${payload.affiliate_id}`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    })
+                    .then((res) => {
+                        if (!res.data.found) {
+                            resolve({ found: false, message: res.data.message });
+                            return;
+                        }
+
+                        resolve({ found: true, posts: res.data.payload });
+                    })
+                    .catch((err) => {
+                        reject({ feedGetFromAffiliateIDError: err });
+                    })
+                    .finally(() => {
+                        setFetching(false);
+                    });
+                });
+            },
+        },
+        Members: {
+            GetFromMemberPovByUsername(payload) {
+                return new Promise((resolve, reject) => {
+                    const token = utils.GetToken();
+
+                    if (token === undefined) {
+                        reject({ membersGetFromMemberPovByUsernameError: 'No token found' });
+                        return;
+                    }
+
+                    setFetching(true);
+
+                    axios.get<APIAction.Members.GetFromMemberPovByUsername.Result>(`${API_BASE_PATH}/members/${payload.username}`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    })
+                    .then((res) => {
+                        if (!res.data.found) {
+                            resolve({ found: false, message: res.data.message });
+                            return;
+                        }
+
+                        resolve({ found: true, member: res.data.payload });
+                    })
+                    .catch((err) => {
+                        reject({ membersGetFromMemberPovByUsernameError: err });
+                    })
+                    .finally(() => {
+                        setFetching(false);
+                    });
+                    
                 });
             },
         },

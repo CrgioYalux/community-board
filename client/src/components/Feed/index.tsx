@@ -2,6 +2,7 @@ import type { Post } from "../../providers/API/types";
 
 import { useAPI } from "../../providers/API";
 
+import { Link } from "react-router-dom";
 import Box from "../Icons/Box";
 
 interface FeedProps {
@@ -55,7 +56,10 @@ const Feed: React.FC<FeedProps> = ({ posts, setPosts, loading, error = '' }) => 
                 <div key={p.post_id} className='bg-gray-800 dark:bg-gray-200 text-white dark:text-black rounded flex flex-col p-2'>
                     <div className='flex flex-row gap-2 items-center'>
                         <span className='text-xl font-bold'>{p.fullname}</span>
-                        <span className='text-xs hover:underline cursor-pointer bg-gray-700 dark:bg-gray-300 rounded-full px-2 py-1'>#{p.username}</span>
+                        <Link 
+                        className='text-xs hover:underline cursor-pointer bg-gray-700 dark:bg-gray-300 rounded-full px-2 py-1'
+                        to={`/members/${p.username}`}
+                        >#{p.username}</Link>
                     </div>
                     <div className='my-2'>
                         <span className='text-lg'>{p.body}</span>

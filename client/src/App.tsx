@@ -4,7 +4,6 @@ const App: React.FC = () => {
   return (
     <BusinessRouter />
   );
-
 }
 
 export default App;

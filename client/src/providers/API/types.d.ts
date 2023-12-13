@@ -36,19 +36,32 @@ export type Post = {
     consultant_affiliate_id: number;
     saved_by_consultant: boolean;
     post_membership_affiliate_id: number;
-    member_id: number;
     member_affiliate_id: number;
     fullname: string;
     username: string;
     member_is_private: boolean;
     member_followees: number;
     member_followers: number;
-    board_id: number;
     board_affiliate_id: number;
     title: string;
     about: string;
     board_is_private: boolean;
     board_followers: number;
+};
+
+type MemberFromMemberPov = {
+    follow_requested_by_consultant: boolean;
+    is_consultant_allowed: boolean;
+    consultant_member_id: number;
+    username: string;
+    affiliate_id: number;
+    fullname: string;
+    bio: string;
+    birthdate: Date;
+    is_private: boolean;
+    followees: number;
+    followers: number;
+    created_at: Date;
 };
 
 export namespace APIAction {
@@ -94,7 +107,7 @@ export namespace APIAction {
             };
         };
     };
-    namespace Post {
+    namespace Posts {
         namespace SwitchSave {
             type Payload = {
                 post_id: number;
@@ -118,6 +131,34 @@ export namespace APIAction {
             type Result = {
                 found: true;
                 payload: Array<Post>;
+            } | {
+                found: false;
+                message: string;
+            };
+        };
+        namespace GetFromAffiliateID {
+            type Payload = {
+                affiliate_id: number;
+            };
+            type Result = {
+                found: true;
+                payload: Array<Post>;
+            } | {
+                found: false;
+                message: string;
+            };
+        };
+    };
+
+    namespace Members {
+        namespace GetFromMemberPovByUsername {
+            type Payload = {
+                username: string;
+            };
+
+            type Result = {
+                found: true;
+                payload: MemberFromMemberPov;
             } | {
                 found: false;
                 message: string;
@@ -152,11 +193,15 @@ export namespace API {
                 Reauth: () => Promise<{ found: true } | { found: false, message: string }>;
             };
             Posts: {
-                SwitchSave: (payload: APIAction.Post.SwitchSave.Payload) => Promise<{ done: boolean }>;
+                SwitchSave: (payload: APIAction.Posts.SwitchSave.Payload) => Promise<{ done: boolean }>;
             };
             Feed: {
                 Get: () => Promise<{ found: true, posts: Post[] } | { found: false, message: string }>;
                 GetSaved: () => Promise<{ found: true, posts: Post[] } | { found: false, message: string }>;
+                GetFromAffiliateID: (payload: APIAction.Feed.GetFromAffiliateID.Payload) => Promise<{ found: true, posts: Post[] } | { found: false, message: string }>;
+            };
+            Members: {
+                GetFromMemberPovByUsername: (payload: APIAction.Members.GetFromMemberPovByUsername.Payload) => Promise<{ found: true, member: MemberFromMemberPov } | { found: false, message: string }>;
             };
         };
     };
