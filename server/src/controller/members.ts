@@ -49,6 +49,15 @@ enum MemberOperationQuery {
     GetByIDAbbreviated = `SELECT m.affiliate_id, md.* FROM member m LEFT JOIN member_description md ON m.id = md.member_id WHERE m.id = ?`,
     GetExtended = `SELECT * FROM member_extended`,
     GetExtendedByID = `SELECT * FROM member_extended me WHERE me.member_id = ?`,
+    GetFromMemberPovByUsername = `
+        SELECT 
+            *
+        FROM member_from_member_pov mfmp
+        WHERE 
+            (mfmp.username = ?)
+            AND
+            (mfmp.consultant_member_id = ? OR mfmp.consultant_member_id IS NULL)
+    `,
 
     // Create
     CreateMember = `INSERT INTO member (affiliate_id, username) VALUES (?, ?)`,
@@ -134,6 +143,14 @@ interface MemberOperation {
             payload: Pick<Member, 'member_id'>,
         ) => Promise<SelectQueryActionReturn<MemberIdentificator & MemberDescription & Pick<Member, 'username' | 'followees' | 'followers' | 'created_at' | 'is_private'>>>;
         QueryReturnType: EffectlessQueryResult<MemberIdentificator & MemberDescription & Pick<Member, 'username' | 'followees' | 'followers' | 'created_at' | 'is_private'>>;
+    };
+
+    GetFromMemberPovByUsername: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<ViewMemberFromMemberPov, 'username' | 'consultant_member_id'>,
+        ) => Promise<SelectQueryActionReturn<ViewMemberFromMemberPov>>;
+        QueryReturnType: EffectlessQueryResult<ViewMemberFromMemberPov>;
     };
 
     CreateMember: {
@@ -371,6 +388,26 @@ const GetExtendedByID: MemberOperation['GetExtendedByID']['Action'] = (pool, pay
 
             if (!parsed.length) {
                 resolve({ found: false, message: 'No member found with that ID' });
+                return;
+            }
+
+            resolve({ found: true, payload: parsed[0] });
+        });
+    });
+};
+
+const GetFromMemberPovByUsername: MemberOperation['GetFromMemberPovByUsername']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.query(MemberOperationQuery.GetFromMemberPovByUsername, [payload.username, payload.consultant_member_id], (err, results) => {
+            if (err) {
+                reject({ getAllExtendedError: err });
+                return;
+            }
+
+            const parsed = results as MemberOperation['GetFromMemberPovByUsername']['QueryReturnType'];
+
+            if (!parsed.length) {
+                resolve({ found: false, message: 'No member found with that username' });
                 return;
             }
 
@@ -947,6 +984,7 @@ const Members = {
     CheckIfCredentialsMatch,
     GetExtended,
     GetExtendedByID,
+    GetFromMemberPovByUsername,
     CreateMinimalMember,
     CreateMemberDescription,
     CreateFullMember,

@@ -18,6 +18,7 @@ const MEMBERS = {
     PATCH: /^\/api\/members\/(\d+)\/edit\/?$/,
     GET: /^\/api\/members\/?$/,
     GET_BY_ID: /^\/api\/members\/(\d+)\/?$/,
+    GET_FROM_MEMBER_POV_BY_USERNAME: /^\/api\/members\/(\w+)\/?$/,
 };
 
 const AFFILIATES = {
@@ -32,7 +33,6 @@ const FOLLOWERS = {
 };
 
 const POSTS = {
-    GET: /^\/api\/posts\/?$/,
     POST: /^\/api\/posts\/?$/,
     SWITCH_SAVE: /^\/api\/posts\/(\d+)\/switch-save\/?$/,
     DELETE: /^\/api\/posts\/(\d+)\/delete\/?$/,

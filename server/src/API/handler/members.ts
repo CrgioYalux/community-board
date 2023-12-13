@@ -48,6 +48,40 @@ function GetByID(request: Request, response: Response, next: NextFunction): void
     });
 }
 
+function GetFromMemberPovByUsername(request: Request, response: Response, next: NextFunction): void {
+    if (response.locals.session === undefined || response.locals.session.member_id === undefined) {
+        response.status(400).send({ message: 'There\'s empty required fields' });
+        return;
+    }
+
+    db.pool.getConnection((err, connection) => {
+        if (err) {
+            connection.release();
+
+            const error = new Error('Could not connect to database');
+            next(error);
+
+            return;
+        }
+
+        const consultant_member_id = Number(response.locals.session.member_id);
+        const username = request.params[0];
+
+        Controller.Members.GetFromMemberPovByUsername(connection, { consultant_member_id, username })
+        .then((res) => {
+            connection.release();
+
+            if (!res.found) {
+                response.status(404);
+                return;
+            }
+
+            response.status(200).send(res);
+        })
+        .catch(next);
+    });
+}
+
 function Delete(request: Request, response: Response, next: NextFunction): void {
     if (response.locals.session === undefined || response.locals.session.entity_id === undefined || response.locals.session.member_id === undefined) {
         response.status(400).send({ message: 'There\'s empty required fields' });
@@ -118,6 +152,7 @@ function Patch(request: Request<Request['params'], {}, Partial<MemberDescription
 const Members = {
     Get,
     GetByID,
+    GetFromMemberPovByUsername,
     Delete,
     Patch,
 };

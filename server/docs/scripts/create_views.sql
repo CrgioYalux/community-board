@@ -186,7 +186,7 @@ JOIN post_membership pm ON vp.post_id = pm.post_id
 LEFT JOIN member_shortened ms ON ms.affiliate_id = pm.affiliate_id
 LEFT JOIN board_shortened bs ON bs.affiliate_id = pm.affiliate_id
 ORDER BY vp.created_at DESC;
--- WHERE ps.affiliate_id = 1;
+-- WHERE ps.affiliate_id = ?;
 
 CREATE OR REPLACE VIEW affiliate_feed AS
 SELECT
@@ -194,12 +194,34 @@ SELECT
     pm.affiliate_id AS post_membership_affiliate_id,
     ps.affiliate_id AS consultant_affiliate_id,
     IF(ps.affiliate_id IS NULL, FALSE, TRUE) AS saved_by_consultant,
-	ms.member_id, ms.affiliate_id AS member_affiliate_id, ms.username, ms.fullname, ms.is_private AS member_is_private, ms.followees AS member_followees, ms.followers AS member_followers,
-    bs.board_id, bs.affiliate_id AS board_affiliate_id, bs.title, bs.about, bs.is_private AS board_is_private, bs.followers AS board_followers
+	ms.affiliate_id AS member_affiliate_id, ms.username, ms.fullname, ms.is_private AS member_is_private, ms.followees AS member_followees, ms.followers AS member_followers,
+    bs.affiliate_id AS board_affiliate_id, bs.title, bs.about, bs.is_private AS board_is_private, bs.followers AS board_followers
 FROM valid_posts vp
 JOIN post_membership pm ON vp.post_id = pm.post_id
 LEFT JOIN post_saved ps ON vp.post_id = ps.post_id
 LEFT JOIN member_shortened ms ON ms.affiliate_id = pm.affiliate_id
 LEFT JOIN board_shortened bs ON bs.affiliate_id = pm.affiliate_id
 ORDER BY vp.created_at DESC;
--- WHERE ps.affiliate_id = 1 OR ps.affiliate_id IS NULL;
+-- WHERE ps.affiliate_id = ? OR ps.affiliate_id IS NULL;
+
+CREATE OR REPLACE VIEW member_from_member_pov AS
+SELECT 
+    IF(mfr.id IS NULL, FALSE, TRUE) AS follow_requested_by_consultant,
+    IF(mfr.is_accepted IS NULL, md.is_private, mfr.is_accepted) AS is_consultant_allowed,
+    mfr.from_member_id AS consultant_member_id,
+	m.username,
+    m.affiliate_id,
+    md.fullname, md.bio, md.birthdate,
+    IF(md.is_private = 1, TRUE, FALSE) AS is_private,
+	IF(mf.followees IS NULL, 0, mf.followees) AS followees,
+	IF(af.followers IS NULL, 0, af.followers) AS followers,
+    e.created_at
+FROM member m 
+JOIN affiliate a ON a.id = m.affiliate_id
+JOIN entity e ON e.id = a.entity_id
+JOIN member_description md ON m.id = md.member_id
+LEFT JOIN member_follow_request mfr ON mfr.to_affiliate_id = a.id
+LEFT JOIN member_followees mf ON m.id = mf.member_id 
+LEFT JOIN affiliate_followers af ON m.affiliate_id = af.affiliate_id
+WHERE e.is_active = 1;
+-- m.username = ? AND mfr.consultant_member_id = ?;

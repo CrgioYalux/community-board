@@ -32,7 +32,7 @@ function Get(request: Request, response: Response, next: NextFunction): void {
 }
 
 function GetFromAffiliateID(request: Request, response: Response, next: NextFunction): void {
-    if (response.locals.session === undefined || response.locals.session.affiliate_id === undefined || request.body.member_consultant_affiliate_id === undefined) {
+    if (response.locals.session === undefined || response.locals.session.affiliate_id === undefined) {
         response.status(400).send({ message: 'There\'s empty required fields' });
         return;
     }

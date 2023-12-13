@@ -104,14 +104,12 @@ type ViewAffiliatePosts = {
     consultant_affiliate_id: number;
     saved_by_consultant: boolean;
     post_membership_affiliate_id: number;
-    member_id: number;
     member_affiliate_id: number;
     fullname: string;
     username: string;
     member_is_private: boolean;
     member_followees: number;
     member_followers: number;
-    board_id: number;
     board_affiliate_id: number;
     title: string;
     about: string;
@@ -119,3 +117,17 @@ type ViewAffiliatePosts = {
     board_followers: number;
 };
 
+type ViewMemberFromMemberPov = {
+    follow_requested_by_consultant: boolean;
+    is_consultant_allowed: boolean;
+    consultant_member_id: number;
+    username: string;
+    affiliate_id: number;
+    fullname: string;
+    bio: string;
+    birthdate: Date;
+    is_private: boolean;
+    followees: number;
+    followers: number;
+    created_at: Date;
+};
