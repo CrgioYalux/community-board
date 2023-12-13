@@ -1,6 +1,6 @@
 const Divider: React.FC<{ className?: string }> = ({ className = '' }) => {
     return (
-        <div className={`bg-blue-900 dark:bg-blue-200 ${className}`}></div>
+        <div className={`bg-current ${className}`}></div>
     );
 };
 

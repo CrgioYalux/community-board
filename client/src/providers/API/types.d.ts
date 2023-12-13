@@ -116,6 +116,22 @@ export namespace APIAction {
                 done: boolean;
             };
         };
+        namespace Create {
+            type Payload = {
+                body: string;
+            };
+            type Result = {
+                created: true;
+                payload: {
+                    affiliates: { affiliate_id: number }[];
+                    entity_id: number;
+                    post_id: number;
+                };
+            } | {
+                created: false;
+                message: string;
+            };
+        };
     };
     namespace Feed {
         namespace Get {
@@ -194,6 +210,7 @@ export namespace API {
             };
             Posts: {
                 SwitchSave: (payload: APIAction.Posts.SwitchSave.Payload) => Promise<{ done: boolean }>;
+                Create: (payload: APIAction.Posts.Create.Payload) => Promise<{ created: true, post: { post_id: number } } | { created: false, message: string }>;
             };
             Feed: {
                 Get: () => Promise<{ found: true, posts: Post[] } | { found: false, message: string }>;

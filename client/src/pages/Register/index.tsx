@@ -58,24 +58,32 @@ const Register: React.FC = () => {
     };
 
     return (
-        <div className='grow shrink-0 basis-full w-full flex flex-col items-center'>
-            <h1 className='text-4xl font-semibold text-blue-900 dark:text-blue-200 mt-20'>Sign up</h1>
-            <div className='text-blue-900 dark:text-blue-200 m-auto grow-0 shrink-0 basis-full flex flex-col gap-10'>
-                <form className='flex-auto w-full flex flex-col gap-4 mt-auto text-xl' onSubmit={handleSubmit}>
-                    <div className='flex flex-col gap-2 max-w-4xl'>
-                        <Input id='usernameInput' name='usernameInput' required label='Username' />
-                        <Input id='fullnameInput' name='fullnameInput' required label='Fullname' />
-                        <Input id='emailInput' name='emailInput' type='email' required label='Email' />
-                        <PasswordInput id='passwordInput' name='passwordInput' required label='Password' />
+        <div className='flex-auto h-[calc(100vh-2.75rem)] grid place-items-center text-current'>
+            <div className='flex flex-col gap-12'>
+                <h1 className='flex-none basis-12 text-4xl font-semibold text-center'>Sign up</h1>
+                <div className='flex-auto flex flex-col gap-10'>
+                    <form 
+                    className='flex-auto w-full flex flex-col gap-8 text-xl'
+                    onSubmit={handleSubmit}
+                    >
+                        <div className='flex flex-col gap-2 max-w-4xl'>
+                            <Input id='usernameInput' name='usernameInput' required label='Username' />
+                            <Input id='fullnameInput' name='fullnameInput' required label='Fullname' />
+                            <Input id='emailInput' name='emailInput' type='email' required label='Email' />
+                            <PasswordInput id='passwordInput' name='passwordInput' required label='Password' />
+                        </div>
+                        <div className='flex flex-row items-center gap-2'>
+                            <button 
+                            className='border-2 border-current w-max px-2 py-0.5 rounded cursor-pointer'
+                            type='submit'
+                            >Register</button>
+                            <span ref={requestResponseSpanRef}></span>
+                        </div>
+                    </form>
+                    <div className='flex flex-row gap-1 justify-center'>
+                        <span>Already have an account?</span>
+                        <Link to='/auth/login' className='font-bold'>Join</Link>
                     </div>
-                    <div className='flex flex-row mr-auto items-center gap-2'>
-                        <button className='border-2 border-current w-max px-4 py-0.5 rounded cursor-pointer' type='submit' disabled={loading}>Register</button>
-                        <span ref={requestResponseSpanRef}></span>
-                    </div>
-                </form>
-                <div className='mt-auto flex flex-row gap-1'>
-                    <span>Already have an account?</span>
-                    <Link to='/auth/login' className='font-bold'>Join</Link>
                 </div>
             </div>
         </div>

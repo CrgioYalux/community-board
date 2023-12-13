@@ -8,14 +8,14 @@ import LockIcon from '../../../components/Icons/Lock';
 
 const pages = ['home', 'saved', 'boards'];
 
-const SidePanel: React.FC = () => {
+const SidePanel: React.FC<{ className?: string }> = ({ className = '' }) => {
     const API = useAPI();
     const location = useLocation();
 
     const isInPage = (page: string) => location.pathname.split('/').includes(page);
 
     return (
-        <div className='grow-0 shrink-0 basis-1/5 min-h-full flex flex-col'>
+        <div className={`min-h-full flex flex-col ${className}`}>
             <ul className='my-auto flex flex-col text-4xl text-blue-900 dark:text-blue-200'>
                 {pages.map((page, i) => (
                     <Fragment key={i}>
@@ -30,8 +30,8 @@ const SidePanel: React.FC = () => {
                     </Fragment>
                 ))}
             </ul>  
-            <div className='w-full h-1/5 p-2 pr-0'>
-                <div className='w-full h-full flex flex-col bg-blue-900 dark:bg-blue-200 rounded'>
+            <div className='w-full p-2 pr-0'>
+                <div className='w-full h-full flex flex-col gap-2 bg-blue-900 dark:bg-blue-200 rounded'>
                     <div className='flex flex-row text-blue-200 dark:text-blue-900 p-2'>
                         <div className='flex flex-col font-semibold'>
                             <span className='text-xl w-[16ch] truncate'>{API.Value.member?.fullname}</span>

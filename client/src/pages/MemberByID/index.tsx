@@ -8,6 +8,7 @@ import NotFound from "../NotFound";
 import Cake from "../../components/Icons/Cake";
 import Calendar from "../../components/Icons/Calendar";
 import Feed from "../../components/Feed";
+import Divider from "../../layouts/components/Divider";
 
 const MemberByID: React.FC = () => {
     const params = useParams<{ username: string }>();
@@ -72,11 +73,9 @@ const MemberByID: React.FC = () => {
     const hasStrangerAcceptedClientRequest = member.follow_requested_by_consultant && member.is_consultant_allowed;
     
     return (
-        <div
-        className='grow shrink-0 basis-full h-full flex flex-col text-gray-800 max-w-xl pt-2'
-        >
+        <div className='flex-auto flex flex-col gap-2 h-[calc(100vh-2.75rem)] max-w-2xl overflow-y-auto p-2 pb-4'>
             <div
-            className='flex flex-col gap-3 bg-blue-300 rounded p-4'
+            className='flex flex-col gap-3 bg-blue-300 rounded p-4 text-gray-800'
             >
                 <div className='flex flex-row justify-between items-start'>
                     <div className='flex flex-col gap-0'>
@@ -120,7 +119,18 @@ const MemberByID: React.FC = () => {
                     </div>
                 </div>
             </div>
-            <Feed posts={posts} setPosts={setPosts} loading={loadingPosts} error={error} />
+
+            <Feed 
+            posts={posts}
+            setPosts={setPosts}
+            loading={API.Value.fetching || loadingPosts}
+            error={error}
+            />
+            <div className='flex-initial flex flex-row gap-1 items-center'>
+                <Divider className='h-1 flex-auto' />
+                <span className='text-2xl text-current'>End of timeline</span>
+                <Divider className='h-1 flex-auto' />
+            </div>
         </div>
     );
 };

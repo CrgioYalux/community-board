@@ -154,6 +154,31 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     });
                 });
             },
+            Create(payload) {
+                return new Promise((resolve, reject) => {
+                    const token = utils.GetToken();
+
+                    if (token === undefined) {
+                        reject({ postsCreateError: 'No token found' });
+                        return;
+                    }
+
+                    axios.post<APIAction.Posts.Create.Result>(`${API_BASE_PATH}/posts/`, payload, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    })
+                    .then((res) => {
+                        if (!res.data.created) {
+                            resolve({ created: false, message: res.data.message });
+                            return;
+                        }
+
+                        resolve({ created: true, post: { post_id: res.data.payload.post_id } });
+                    })
+                    .catch((err) => {
+                        reject({ postsCreateError: err });
+                    });
+                });
+            },
         },
         Feed: {
             Get() {

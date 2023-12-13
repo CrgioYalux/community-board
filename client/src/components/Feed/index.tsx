@@ -10,9 +10,10 @@ interface FeedProps {
     setPosts: React.Dispatch<React.SetStateAction<Post[]>>;
     loading: boolean;
     error?: string;
+    className?: string;
 };
 
-const Feed: React.FC<FeedProps> = ({ posts, setPosts, loading, error = '' }) => {
+const Feed: React.FC<FeedProps> = ({ posts, setPosts, loading, error = '', className = '' }) => {
     const API = useAPI();
 
     const switchSaveOnPost = (post_id: number): void => {
@@ -35,14 +36,14 @@ const Feed: React.FC<FeedProps> = ({ posts, setPosts, loading, error = '' }) => 
 
     if (API.Value.fetching || loading)
         return (
-            <div className='flex-auto grid place-items-center'>
+            <div className={`grid place-items-center ${className}`}>
                 <span className='text-2xl font-bold tracking-wide'>Looking for posts...</span>        
             </div>
         );
 
     if (!posts.length)
         return (
-            <div className='flex-auto grid place-items-center'>
+            <div className={`grid place-items-center ${className}`}>
                 <div className='flex flex-col gap-2 items-center text-2xl'>
                     <span className='font-bold tracking-wide'>No posts to show</span>
                     <span className='text-red-400'>{error}</span>
@@ -51,7 +52,7 @@ const Feed: React.FC<FeedProps> = ({ posts, setPosts, loading, error = '' }) => 
         );
 
     return (
-        <div className='flex-auto flex flex-col gap-2 mt-2 max-w-xl overflow-auto'>
+        <div className={`flex flex-col gap-2 ${className}`}>
             {posts.map((p) => (
                 <div key={p.post_id} className='bg-gray-800 dark:bg-gray-200 text-white dark:text-black rounded flex flex-col p-2'>
                     <div className='flex flex-row gap-2 items-center'>
