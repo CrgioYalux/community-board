@@ -9,6 +9,7 @@ import Cake from "../../components/Icons/Cake";
 import Calendar from "../../components/Icons/Calendar";
 import Feed from "../../components/Feed";
 import Divider from "../../layouts/components/Divider";
+import Lock from '../../components/Icons/Lock';
 
 const MemberByID: React.FC = () => {
     const params = useParams<{ username: string }>();
@@ -70,7 +71,48 @@ const MemberByID: React.FC = () => {
 
     const isStranger = member.username !== API.Value.member?.username;
     const hasClientSentRequest = member.follow_requested_by_consultant;
-    const hasStrangerAcceptedClientRequest = member.follow_requested_by_consultant && member.is_consultant_allowed;
+    const hasStrangerAcceptedClientRequest = hasClientSentRequest && member.is_consultant_allowed;
+    const unfollowButtonVisible = (isStranger && hasClientSentRequest && hasStrangerAcceptedClientRequest);
+    const sentButtonVisible = (isStranger && hasClientSentRequest && !hasStrangerAcceptedClientRequest);
+    const followButtonVisible = (isStranger && !hasClientSentRequest);
+
+    const handleUnfollow = (): void => {
+        API.Actions.Affiliates.Unfollow({ affiliate_id: member.affiliate_id })
+        .then((res) => {
+            if (!res.done) return;
+
+            setMember((prev) => {
+                if (prev === null) return null;
+
+                return {
+                    ...prev,
+                    followers: prev.followers === 0 ? 0 : prev.followers - 1,
+                    follow_requested_by_consultant: false,
+                    is_consultant_allowed: member.is_private ? false : true,
+                };
+            });
+        })
+        .catch(console.error);
+    };
+
+    const handleFollow = (): void => {
+        API.Actions.Affiliates.Follow({ affiliate_id: member.affiliate_id })
+        .then((res) => {
+            if (!res.done) return;
+
+            setMember((prev) => {
+                if (prev === null) return null;
+
+                return {
+                    ...prev,
+                    followers: member.is_private ? prev.followers : prev.followers + 1,
+                    follow_requested_by_consultant: true,
+                    is_consultant_allowed: member.is_private ? false : true,
+                };
+            });
+        })
+        .catch(console.error);
+    };
     
     return (
         <div className='flex-auto flex flex-col gap-2 h-[calc(100vh-2.75rem)] max-w-2xl overflow-y-auto p-2 pb-4'>
@@ -79,18 +121,28 @@ const MemberByID: React.FC = () => {
             >
                 <div className='flex flex-row justify-between items-start'>
                     <div className='flex flex-col gap-0'>
-                        <h1 className='text-4xl font-bold'>{member.fullname}</h1>
+                        <h1 className='text-2xl font-bold'>{member.fullname ?? 'Sergio Yalux'}</h1>
                         <h2 className='text-sm'>#{member.username}</h2>
                     </div>
-                    {(isStranger && hasClientSentRequest && hasStrangerAcceptedClientRequest) &&
-                        <button className='w-[10ch] font-semibold text-blue-900 border-2 border-current rounded-full px-2 py-1 cursor-pointer'>Unfollow</button>
-                    }
-                    {(isStranger && hasClientSentRequest && !hasStrangerAcceptedClientRequest) &&
-                        <button className='w-[10ch] font-semibold text-blue-900 border-2 border-current rounded-full px-2 py-1 cursor-pointer'>Sent</button>
-                    }
-                    {(isStranger && !hasClientSentRequest) &&
-                        <button className='w-[10ch] font-semibold text-blue-900 border-2 border-current rounded-full px-2 py-1 cursor-pointer'>Follow</button>
-                    }
+                    <div className='flex flex-row gap-2 items-center text-blue-900 fill-current font-semibold'>
+                        {member.is_private ? <Lock /> : ''}
+                        {unfollowButtonVisible 
+                            ? <button 
+                            className='w-[10ch] border-2 border-current rounded-full px-2 py-1 cursor-pointer'
+                            onClick={handleUnfollow}
+                            >Unfollow</button>
+                        : sentButtonVisible
+                            ? <button 
+                            className='w-[10ch] border-2 border-current rounded-full px-2 py-1 cursor-pointer'
+                            onClick={handleUnfollow}
+                            >Sent</button>
+                        : followButtonVisible
+                            ? <button 
+                            className='w-[10ch] border-2 border-current rounded-full px-2 py-1 cursor-pointer'
+                            onClick={handleFollow}
+                            >Follow</button>
+                        : ''}
+                    </div>
                 </div>
                 {member.bio !== null &&
                     <div className='flex flex-col gap-2 text-normal'>

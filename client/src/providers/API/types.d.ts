@@ -1,6 +1,4 @@
 // type EffectlessOperationResult<T> = { found: true, payload: T } | { found: false, message: string };
-    // FOLLOW: /^\/api\/affiliates\/(\d+)\/follow\/?$/,
-    // UNFOLLOW: /^\/api\/affiliates\/(\d+)\/unfollow\/?$/,
 
 export type SessionData = {
     entity_id: number;
