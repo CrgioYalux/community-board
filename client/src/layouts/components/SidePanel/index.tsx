@@ -9,11 +9,8 @@ import LockIcon from '../../../components/Icons/Lock';
 const pages = [
     { title: 'home', to: '/home' },
     { title: 'saved', to: '/saved' },
-    { title: 'boards', to: '/boards' },
     { title: 'requests', to: '/followers/requests' }
 ];
-
-
 
 const SidePanel: React.FC<{ className?: string }> = ({ className = '' }) => {
     const API = useAPI();
@@ -41,18 +38,25 @@ const SidePanel: React.FC<{ className?: string }> = ({ className = '' }) => {
                     <div className='flex flex-row text-blue-200 dark:text-blue-900 p-2'>
                         <div className='flex flex-col font-semibold'>
                             <span className='text-xl w-[16ch] truncate'>{API.Value.member?.fullname}</span>
-                            <span className='text-sm w-[14ch] truncate'>#{API.Value.member?.username}</span>
+                            <Link to={`/members/${API.Value.member?.username}`} className='text-sm w-[14ch] truncate hover:underline cursor-pointer'>
+                                <span>#{API.Value.member?.username}</span>
+                            </Link>
                         </div>
                         <span className='text-blue-200 text-blue-200 dark:text-blue-900 fill-current grid place-items-center h-8 w-8 ml-auto p-2'>
                         {API.Value.member?.is_private ? <LockIcon /> : ''}
                         </span>
                     </div>
+
                     <div className='flex flex-row gap-2 text-sm text-blue-200 dark:text-blue-900 px-2'>
                         <span className='tracking-wider'>
-                            <span className='font-bold tracking-normal'>{API.Value.member?.followers}</span> Followers
+                            <Link to={`/affiliates/${API.Value.member?.affiliate_id}/followers`} className='hover:underline'>
+                                <span className='font-bold tracking-normal'>{API.Value.member?.followers}</span> Followers
+                            </Link>
                         </span>
                         <span className='tracking-widest'>
-                            <span className='font-bold tracking-normal'>{API.Value.member?.followees}</span> Following
+                            <Link to={`/affiliates/${API.Value.member?.affiliate_id}/followees`} className='hover:underline'>
+                                <span className='font-bold tracking-normal'>{API.Value.member?.followees}</span> Following
+                            </Link>
                         </span>
                     </div>
                     <div className='flex flex-row items-center mt-auto'>

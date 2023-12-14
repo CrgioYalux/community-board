@@ -221,6 +221,33 @@ export namespace APIAction {
                 message: string;
             };
         };
+        namespace Get {
+            type Payload = {
+                consultant_affiliate_id: number;
+            };
+            type Result = {
+                found: true;
+                payload: FollowRequest[];
+            } | {
+                found: false;
+                message: string;
+            };
+        };
+    };
+
+    namespace Followees {
+        namespace Get {
+            type Payload = {
+                consultant_affiliate_id: number;
+            };
+            type Result = {
+                found: true;
+                payload: FollowRequest[];
+            } | {
+                found: false;
+                message: string;
+            };
+        };
     };
 
     namespace Affiliates {
@@ -291,6 +318,10 @@ export namespace API {
                 GetRequests: () => Promise<{ found: true, requests: FollowRequest[] } | { found: false, message: string }>;
                 AcceptRequest: (payload: APIAction.Followers.AcceptRequest.Payload) => Promise<{ done: true } | { done: false, message: string }>;
                 DeclineRequest: (payload: APIAction.Followers.DeclineRequest.Payload) => Promise<{ done: true } | { done: false, message: string }>;
+                Get: (payload: APIAction.Followers.Get.Payload) => Promise<{ found: true, followers: FollowRequest[] } | { found: false, message: string }>;
+            };
+            Followees: {
+                Get: (payload: APIAction.Followers.Get.Payload) => Promise<{ found: true, followees: FollowRequest[] } | { found: false, message: string }>;
             };
             Affiliates: {
                 Follow: (payload: APIAction.Affiliates.Follow.Payload) => Promise<{ done: true, follow_request_id: number } | { done: false, message: string }>;

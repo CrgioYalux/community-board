@@ -377,6 +377,69 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 });
             });
         },
+        Get(payload) {
+            return new Promise((resolve, reject) => {
+                const token = utils.GetToken();
+
+                if (token === undefined) {
+                    reject({ followersGetError: 'No token found' });
+                    return;
+                }
+
+                setFetching(true);
+
+                axios.get<APIAction.Followers.Get.Result>(`${API_BASE_PATH}/followers/affiliate/${payload.consultant_affiliate_id}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                })
+                .then((res) => {
+                    if (!res.data.found) {
+                        resolve({ found: false, message: res.data.message });
+                        return;
+                    }
+
+                    resolve({ found: true, followers: res.data.payload });
+                })
+                .catch((err) => {
+                    reject({ followersGetError: err });
+                })
+                .finally(() => {
+                    setFetching(false);
+                });
+            });
+        },
+    };
+
+    const Followees: API.Context['Actions']['Followees'] = {
+        Get(payload) {
+            return new Promise((resolve, reject) => {
+                const token = utils.GetToken();
+
+                if (token === undefined) {
+                    reject({ followeesGetError: 'No token found' });
+                    return;
+                }
+
+                setFetching(true);
+
+                axios.get<APIAction.Followers.Get.Result>(`${API_BASE_PATH}/followees/affiliate/${payload.consultant_affiliate_id}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                })
+                .then((res) => {
+                    if (!res.data.found) {
+                        resolve({ found: false, message: res.data.message });
+                        return;
+                    }
+
+                    resolve({ found: true, followees: res.data.payload });
+                })
+                .catch((err) => {
+                    reject({ followeesGetError: err });
+                })
+                .finally(() => {
+                    setFetching(false);
+                });
+            });
+        },
     };
 
     const Affiliates: API.Context['Actions']['Affiliates'] = {
@@ -440,6 +503,7 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         Feed,
         Members,
         Followers,
+        Followees,
         Affiliates,
     };
 

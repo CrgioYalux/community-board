@@ -81,7 +81,7 @@ const FollowRequests: React.FC = () => {
                 <div key={f.follow_request_id} className='flex flex-row items-center justify-between bg-gray-600 text-blue-300 rounded p-2'>
                     <div className='flex flex-row gap-2 items-center'>
                         <Link
-                        className='text-xs hover:underline cursor-pointer bg-gray-700 dark:bg-gray-300 rounded-full px-2 py-1'
+                        className='text-xs hover:underline cursor-pointer bg-gray-700 rounded-full px-2 py-1'
                         to={`/members/${f.username}`}
                         >#{f.username}</Link>
                         <span className='text-lg font-semibold text-white'>{f.fullname}</span>

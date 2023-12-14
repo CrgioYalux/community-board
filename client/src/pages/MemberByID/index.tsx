@@ -1,6 +1,6 @@
 import type { MemberFromMemberPov, Post } from "../../providers/API/types";
 
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAPI } from "../../providers/API";
 
@@ -151,10 +151,14 @@ const MemberByID: React.FC = () => {
                 }
                 <div className='flex flex-row gap-2 text-sm'>
                     <span className='tracking-wider'>
-                        <span className='font-bold tracking-normal'>{member.followers}</span> Followers
+                        <Link to={`/affiliates/${member.affiliate_id}/followers`} className='hover:underline'>
+                            <span className='font-bold tracking-normal'>{member.followers}</span> Followers
+                        </Link>
                     </span>
                     <span className='tracking-widest'>
-                        <span className='font-bold tracking-normal'>{member.followees}</span> Following
+                        <Link to={`/affiliates/${member.affiliate_id}/followees`} className='hover:underline'>
+                            <span className='font-bold tracking-normal'>{member.followees}</span> Following
+                        </Link>
                     </span>
                 </div>
                 <div className='flex flex-row justify-between text-sm'>

@@ -11,6 +11,8 @@ import Saved from '../../pages/Saved';
 import MemberByID from '../../pages/MemberByID';
 import NotFound from '../../pages/NotFound';
 import FollowRequests from '../../pages/FollowRequests';
+import AffiliateFollowers from '../../pages/AffiliateFollowers';
+import AffiliateFollowees from '../../pages/AffiliateFollowees';
 
 const BusinessRouter: React.FC = () => {
     const API = useAPI();
@@ -53,17 +55,21 @@ const BusinessRouter: React.FC = () => {
                         <Route index element={<Saved />} />
                     </Route>
                     <Route path='members/:username' element={<MemberByID />}/>
+                    <Route path='affiliates/:affiliate_id'>
+                        <Route path='followers' element={<AffiliateFollowers />}/>
+                        <Route path='followees' element={<AffiliateFollowees />}/>
+                    </Route>
                     <Route path='followers'>
                         <Route index element={<>List followers</>} />
                         <Route path='requests' element={<FollowRequests />}/>
                     </Route>
                 </Route>
-            <Route path='auth' element={API.Value.logged ? <Navigate to='/' /> : <Outlet />}>
-                <Route index element={<Navigate to='/auth/login' />} />
-                <Route path='login' element={<Login />} />
-                <Route path='register' element={<Register />} />
-            </Route>
-            <Route path='*' element={<NotFound />} />
+                <Route path='auth' element={API.Value.logged ? <Navigate to='/' /> : <Outlet />}>
+                    <Route index element={<Navigate to='/auth/login' />} />
+                    <Route path='login' element={<Login />} />
+                    <Route path='register' element={<Register />} />
+                </Route>
+                <Route path='*' element={<NotFound />} />
             </Route>
         </Routes>
     );
