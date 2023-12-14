@@ -72,7 +72,7 @@ function GetFromMemberPovByUsername(request: Request, response: Response, next: 
             connection.release();
 
             if (!res.found) {
-                response.status(404);
+                response.status(404).send(res);
                 return;
             }
 

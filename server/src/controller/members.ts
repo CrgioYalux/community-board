@@ -49,7 +49,18 @@ enum MemberOperationQuery {
     GetByIDAbbreviated = `SELECT m.affiliate_id, md.* FROM member m LEFT JOIN member_description md ON m.id = md.member_id WHERE m.id = ?`,
     GetExtended = `SELECT * FROM member_extended`,
     GetExtendedByID = `SELECT * FROM member_extended me WHERE me.member_id = ?`,
+
     GetFromMemberPovByUsername = `
+        SELECT 
+            IF(mfr.id IS NULL, FALSE, TRUE) AS follow_requested_by_consultant,
+            IF(mfr.is_accepted IS NULL, IF(me.is_private = 1, FALSE, TRUE), IF(mfr.is_accepted = 1, TRUE, FALSE)) AS is_consultant_allowed,
+            mfr.from_member_id AS consultant_member_id,
+            me.*
+        FROM member_extended me
+        LEFT JOIN member_follow_request mfr ON mfr.to_affiliate_id = me.affiliate_id AND mfr.from_member_id = ?
+        WHERE me.username = ? 
+    `,
+    AuxGetFromMemberPovByUsername = `
         SELECT 
             *
         FROM member_from_member_pov mfmp
@@ -431,7 +442,7 @@ const GetExtendedByID: MemberOperation['GetExtendedByID']['Action'] = (pool, pay
 
 const GetFromMemberPovByUsername: MemberOperation['GetFromMemberPovByUsername']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
-        pool.query(MemberOperationQuery.GetFromMemberPovByUsername, [payload.username, payload.consultant_member_id], (err, results) => {
+        pool.query(MemberOperationQuery.GetFromMemberPovByUsername, [payload.consultant_member_id, payload.username], (err, results) => {
             if (err) {
                 reject({ getAllExtendedError: err });
                 return;
