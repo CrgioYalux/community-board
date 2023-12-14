@@ -1,4 +1,4 @@
-import { Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Outlet, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAPI } from '../../providers/API';
 
@@ -10,6 +10,7 @@ import Home from '../../pages/Home';
 import Saved from '../../pages/Saved';
 import MemberByID from '../../pages/MemberByID';
 import NotFound from '../../pages/NotFound';
+import FollowRequests from '../../pages/FollowRequests';
 
 const BusinessRouter: React.FC = () => {
     const API = useAPI();
@@ -52,6 +53,10 @@ const BusinessRouter: React.FC = () => {
                         <Route index element={<Saved />} />
                     </Route>
                     <Route path='members/:username' element={<MemberByID />}/>
+                    <Route path='followers'>
+                        <Route index element={<>List followers</>} />
+                        <Route path='requests' element={<FollowRequests />}/>
+                    </Route>
                 </Route>
             <Route path='auth' element={API.Value.logged ? <Navigate to='/' /> : <Outlet />}>
                 <Route index element={<Navigate to='/auth/login' />} />

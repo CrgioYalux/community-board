@@ -1,4 +1,6 @@
 // type EffectlessOperationResult<T> = { found: true, payload: T } | { found: false, message: string };
+    // FOLLOW: /^\/api\/affiliates\/(\d+)\/follow\/?$/,
+    // UNFOLLOW: /^\/api\/affiliates\/(\d+)\/unfollow\/?$/,
 
 export type SessionData = {
     entity_id: number;
@@ -62,6 +64,14 @@ type MemberFromMemberPov = {
     followees: number;
     followers: number;
     created_at: Date;
+};
+
+type FollowRequest = {
+    username: string;
+    fullname: string;
+    affiliate_id: number;
+    follow_request_id: number;
+    consultant_affiliate_id: number;
 };
 
 export namespace APIAction {
@@ -137,7 +147,7 @@ export namespace APIAction {
         namespace Get {
             type Result = {
                 found: true;
-                payload: Array<Post>;
+                payload: Post[];
             } | {
                 found: false;
                 message: string;
@@ -146,7 +156,7 @@ export namespace APIAction {
         namespace GetSaved {
             type Result = {
                 found: true;
-                payload: Array<Post>;
+                payload: Post[];
             } | {
                 found: false;
                 message: string;
@@ -158,7 +168,7 @@ export namespace APIAction {
             };
             type Result = {
                 found: true;
-                payload: Array<Post>;
+                payload: Post[];
             } | {
                 found: false;
                 message: string;
@@ -177,6 +187,65 @@ export namespace APIAction {
                 payload: MemberFromMemberPov;
             } | {
                 found: false;
+                message: string;
+            };
+        };
+    };
+    namespace Followers {
+        namespace GetRequests {
+            type Result = {
+                found: true;
+                payload: FollowRequest[];
+            } | {
+                found: false;
+                message: string;
+            };
+        };
+        namespace AcceptRequest {
+            type Payload = {
+                follow_request_id: number;
+            };
+            type Result = {
+                done: true;
+            } | {
+                done: false;
+                message: string;
+            };
+        };
+        namespace DeclineRequest {
+            type Payload = {
+                follow_request_id: number;
+            };
+            type Result = {
+                done: true;
+            } | {
+                done: false;
+                message: string;
+            };
+        };
+    };
+
+    namespace Affiliates {
+        namespace Follow {
+            type Payload = {
+                affiliate_id: number;
+            };
+            type Result = {
+                done: true;
+                payload: { follow_request_id: number };
+            } | {
+                done: false;
+                message: string;
+            };
+        };
+        namespace Unfollow {
+            type Payload = {
+                affiliate_id: number;
+            };
+            type Result = {
+                done: true;
+            } | {
+                done: false;
                 message: string;
             };
         };
@@ -219,6 +288,15 @@ export namespace API {
             };
             Members: {
                 GetFromMemberPovByUsername: (payload: APIAction.Members.GetFromMemberPovByUsername.Payload) => Promise<{ found: true, member: MemberFromMemberPov } | { found: false, message: string }>;
+            };
+            Followers: {
+                GetRequests: () => Promise<{ found: true, requests: FollowRequest[] } | { found: false, message: string }>;
+                AcceptRequest: (payload: APIAction.Followers.AcceptRequest.Payload) => Promise<{ done: true } | { done: false, message: string }>;
+                DeclineRequest: (payload: APIAction.Followers.DeclineRequest.Payload) => Promise<{ done: true } | { done: false, message: string }>;
+            };
+            Affiliates: {
+                Follow: (payload: APIAction.Affiliates.Follow.Payload) => Promise<{ done: true, follow_request_id: number } | { done: false, message: string }>;
+                Unfollow: (payload: APIAction.Affiliates.Unfollow.Payload) => Promise<{ done: true } | { done: false, message: string }>;
             };
         };
     };

@@ -305,6 +305,149 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 });
             },
         },
+        Followers: {
+            GetRequests() {
+                return new Promise((resolve, reject) => {
+                    const token = utils.GetToken();
+
+                    if (token === undefined) {
+                        reject({ followersGetRequestsError: 'No token found' });
+                        return;
+                    }
+
+                    setFetching(true);
+
+                    axios.get<APIAction.Followers.GetRequests.Result>(`${API_BASE_PATH}/followers/requests`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    })
+                    .then((res) => {
+                        if (!res.data.found) {
+                            resolve({ found: false, message: res.data.message });
+                            return;
+                        }
+
+                        resolve({ found: true, requests: res.data.payload });
+                    })
+                    .catch((err) => {
+                        reject({ followersGetRequestsError: err });
+                    })
+                    .finally(() => {
+                        setFetching(false);
+                    });
+                });
+            },
+            AcceptRequest(payload) {
+                return new Promise((resolve, reject) => {
+                    const token = utils.GetToken();
+
+                    if (token === undefined) {
+                        reject({ followersAcceptRequestError: 'No token found' });
+                        return;
+                    }
+                    
+                    axios.patch<APIAction.Followers.AcceptRequest.Result>(`${API_BASE_PATH}/followers/requests/${payload.follow_request_id}/accept`, {}, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    })
+                    .then((res) => {
+                        if (!res.data.done) {
+                            resolve({ done: false, message: res.data.message });
+                            return;
+                        }
+
+                        setMember((prev) => {
+                            if (prev === null) return prev;
+                            
+                            return {
+                                ...prev,
+                                followers: prev.followers + 1,
+                            };
+                        });
+
+                        resolve({ done: true });
+                    })
+                    .catch((err) => {
+                        reject({ followersAcceptRequestError: err });
+                    });
+                });
+            },
+            DeclineRequest(payload) {
+                return new Promise((resolve, reject) => {
+                    const token = utils.GetToken();
+
+                    if (token === undefined) {
+                        reject({ followersDeclineRequestError: 'No token found' });
+                        return;
+                    }
+
+                    axios.delete<APIAction.Followers.DeclineRequest.Result>(`${API_BASE_PATH}/followers/requests/${payload.follow_request_id}/decline`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    })
+                    .then((res) => {
+                        if (!res.data.done) {
+                            resolve({ done: false, message: res.data.message });
+                            return;
+                        }
+
+                        resolve({ done: true });
+                    })
+                    .catch((err) => {
+                        reject({ followersDeclineRequestError: err });
+                    });
+                });
+            },
+        },
+        Affiliates: {
+            Follow(payload) {
+                return new Promise((resolve, reject) => {
+                    const token = utils.GetToken();
+
+                    if (token === undefined) {
+                        reject({ affiliatesFollowError: 'No token found' });
+                        return;
+                    }
+
+                    axios.get<APIAction.Affiliates.Follow.Result>(`${API_BASE_PATH}/affiliates/${payload.affiliate_id}/follow`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    })
+                    .then((res) => {
+                        if (!res.data.done) {
+                            resolve({ done: false, message: res.data.message });
+                            return;
+                        }
+
+                        resolve({ done: true, follow_request_id: res.data.payload.follow_request_id });
+                    })
+                    .catch((err) => {
+                        reject({ affiliatesFollowError: err });
+                    });
+                });
+            },
+            Unfollow(payload) {
+                return new Promise((resolve, reject) => {
+                    const token = utils.GetToken();
+
+                    if (token === undefined) {
+                        reject({ affiliatesUnfollowError: 'No token found' });
+                        return;
+                    }
+
+                    axios.get<APIAction.Affiliates.Unfollow.Result>(`${API_BASE_PATH}/affiliates/${payload.affiliate_id}/unfollow`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    })
+                    .then((res) => {
+                        if (!res.data.done) {
+                            resolve({ done: false, message: res.data.message });
+                            return;
+                        }
+
+                        resolve({ done: true });
+                    })
+                    .catch((err) => {
+                        reject({ affiliatesUnfollowError: err });
+                    });
+                });
+            },
+        },
     };
 
     const Value = { logged, fetching, member, tryingReauth } as API.Context['Value'];

@@ -6,7 +6,14 @@ import Divider from "../Divider";
 import ThemeSwitch from "../ThemeSwitch";
 import LockIcon from '../../../components/Icons/Lock';
 
-const pages = ['home', 'saved', 'boards'];
+const pages = [
+    { title: 'home', to: '/home' },
+    { title: 'saved', to: '/saved' },
+    { title: 'boards', to: '/boards' },
+    { title: 'requests', to: '/followers/requests' }
+];
+
+
 
 const SidePanel: React.FC<{ className?: string }> = ({ className = '' }) => {
     const API = useAPI();
@@ -20,11 +27,10 @@ const SidePanel: React.FC<{ className?: string }> = ({ className = '' }) => {
                 {pages.map((page, i) => (
                     <Fragment key={i}>
                         <Link 
-                        key={page}
-                        className={`w-full py-2 pl-4 hover:cursor-pointer ${isInPage(page) ? 'bg-blue-600 text-blue-200 dark:text-blue-900' : 'hover:bg-blue-400/[.50] dark:hover:bg-blue-700/[.50]'}`}
-                        to={`/${page}`}
+                        className={`w-full py-2 pl-4 hover:cursor-pointer ${isInPage(page.title) ? 'bg-blue-600 text-blue-200 dark:text-blue-900' : 'hover:bg-blue-400/[.50] dark:hover:bg-blue-700/[.50]'}`}
+                        to={page.to}
                         >
-                            <span className='w-[6ch]'>{page}</span>
+                            <span className='w-[6ch]'>{page.title}</span>
                         </Link>
                         <Divider className='w-full h-1' />
                     </Fragment>
