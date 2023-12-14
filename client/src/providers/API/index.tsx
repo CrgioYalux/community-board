@@ -30,8 +30,6 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const Auth: API.Context['Actions']['Auth'] = {
         Register(payload) {
             return new Promise((resolve, reject) => {
-                setFetching(true);
-
                 axios.post<APIAction.Auth.Register.Result>(`${API_BASE_PATH}/auth/register`, payload)
                 .then((res) => {
                     if (!res.data.created) {
@@ -43,9 +41,6 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 })
                 .catch((err) => {
                     reject({ authRegisterError: err });
-                })
-                .finally(() => {
-                    setFetching(false);
                 });
             });
         },
@@ -289,6 +284,39 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     setFetching(false);
                 });
                 
+            });
+        },
+        Edit(payload) {
+            return new Promise((resolve, reject) => {
+                const token = utils.GetToken();
+
+                if (token === undefined) {
+                    reject({ membersEditError: 'No token found' });
+                    return;
+                }
+
+                if (member === null) {
+                    reject({ membersEditError: 'No session' });
+                    return;
+                }
+                
+                const { birthdate } = payload;
+                const sanitizedBirthdate = !birthdate ? null : birthdate;
+
+                axios.patch<APIAction.Members.Edit.Result>(`${API_BASE_PATH}/members/${member.member_id}/edit`, { ...payload, birthdate: sanitizedBirthdate }, {
+                    headers: { Authorization: `Bearer ${token}` },
+                })
+                .then((res) => {
+                    if (!res.data.done) {
+                        resolve({ done: false, message: res.data.message });
+                        return;
+                    }
+
+                    resolve({ done: true });
+                })
+                .catch((err) => {
+                    reject({ membersEditError: err });
+                });
             });
         },
     };

@@ -56,7 +56,7 @@ const Feed: React.FC<FeedProps> = ({ posts, setPosts, loading, error = '', class
             {posts.map((p) => (
                 <div key={p.post_id} className='bg-gray-800 dark:bg-gray-200 text-white dark:text-black rounded flex flex-col p-2'>
                     <div className='flex flex-row gap-2 items-center'>
-                        <span className='text-xl font-bold'>{p.fullname}</span>
+                        {p.fullname === null ? '' : <span className='text-xl font-bold'>{p.fullname}</span>}
                         <Link 
                         className='text-xs hover:underline cursor-pointer bg-gray-700 dark:bg-gray-300 rounded-full px-2 py-1'
                         to={`/members/${p.username}`}

@@ -10,6 +10,8 @@ import Calendar from "../../components/Icons/Calendar";
 import Feed from "../../components/Feed";
 import Divider from "../../layouts/components/Divider";
 import Lock from '../../components/Icons/Lock';
+import EditProfile from "../../components/EditProfile";
+import Pen from "../../components/Icons/Pen";
 
 const MemberByID: React.FC = () => {
     const params = useParams<{ username: string }>();
@@ -18,9 +20,11 @@ const MemberByID: React.FC = () => {
     const [loadingMember, setLoadingMember] = useState<boolean>(true);
     const [loadingPosts, setLoadingPosts] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
+    const [editing, setEditing] = useState<boolean>(false);
+
     const API = useAPI();
 
-    useEffect(() => {
+    const fetchMember = (): void => {
         if (params.username === undefined) return;
 
         API.Actions.Members.GetFromMemberPovByUsername({ username: params.username })
@@ -40,7 +44,11 @@ const MemberByID: React.FC = () => {
                 setError('An error occurred while fetching');
             });
         })
-        .catch(() => {});
+        .catch(console.error);
+    };
+
+    useEffect(() => {
+        fetchMember();
     }, []);
 
     useEffect(() => {
@@ -75,6 +83,24 @@ const MemberByID: React.FC = () => {
     const unfollowButtonVisible = (isStranger && hasClientSentRequest && hasStrangerAcceptedClientRequest);
     const sentButtonVisible = (isStranger && hasClientSentRequest && !hasStrangerAcceptedClientRequest);
     const followButtonVisible = (isStranger && !hasClientSentRequest);
+    const isEditable = !isStranger;
+    const isEditing = isEditable && editing;
+
+    if (isEditing) {
+        return (
+            <div className='flex-auto flex flex-col gap-2 h-[calc(100vh-2.75rem)] max-w-2xl overflow-y-auto p-2 pb-4'>
+                <EditProfile 
+                member={member}
+                onAccept={() => {
+                    fetchMember();
+                }}
+                onEither={() => {
+                    setEditing(false);
+                }}
+                />
+            </div>
+        );
+    }
 
     const handleUnfollow = (): void => {
         API.Actions.Affiliates.Unfollow({ affiliate_id: member.affiliate_id })
@@ -121,8 +147,8 @@ const MemberByID: React.FC = () => {
             >
                 <div className='flex flex-row justify-between items-start'>
                     <div className='flex flex-col gap-0'>
-                        <h1 className='text-2xl font-bold'>{member.fullname ?? 'Sergio Yalux'}</h1>
-                        <h2 className='text-sm'>#{member.username}</h2>
+                        {member.fullname === null ? '' : <h1 className='text-2xl font-bold'>{member.fullname}</h1>}
+                        <h2 className='text-lg font-semibold'>#{member.username}</h2>
                     </div>
                     <div className='flex flex-row gap-2 items-center text-blue-900 fill-current font-semibold'>
                         {member.is_private ? <Lock /> : ''}
@@ -142,6 +168,9 @@ const MemberByID: React.FC = () => {
                             onClick={handleFollow}
                             >Follow</button>
                         : ''}
+                        {isEditable 
+                            ? <button onClick={() => setEditing(true)}><Pen /></button>
+                            : ''}
                     </div>
                 </div>
                 {member.bio !== null &&
@@ -164,7 +193,7 @@ const MemberByID: React.FC = () => {
                 <div className='flex flex-row justify-between text-sm'>
                     <div className='flex flex-row gap-2 items-center font-semibold'>
                         <Cake className='fill-current w-4 h-4' />
-                        {member.birthdate === null ? '---' : member.birthdate.toDateString()}
+                        {member.birthdate === null ? '---' : new Date(member.birthdate).toDateString()}
                     </div>
                     <div className='flex flex-row gap-2 items-center font-semibold'>
                         <Calendar className='fill-current w-4 h-4' />

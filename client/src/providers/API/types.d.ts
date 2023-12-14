@@ -188,6 +188,20 @@ export namespace APIAction {
                 message: string;
             };
         };
+        namespace Edit {
+            type Payload = {
+                fullname: string | null;
+                is_private: boolean | null;
+                bio: string | null;
+                birthdate: string | null;
+            };
+            type Result = {
+                done: true;
+            } | {
+                done: false;
+                message: string;
+            };
+        };
     };
     namespace Followers {
         namespace GetRequests {
@@ -313,6 +327,7 @@ export namespace API {
             };
             Members: {
                 GetFromMemberPovByUsername: (payload: APIAction.Members.GetFromMemberPovByUsername.Payload) => Promise<{ found: true, member: MemberFromMemberPov } | { found: false, message: string }>;
+                Edit: (payload: APIAction.Members.Edit.Payload) => Promise<{ done: true } | { done: false, message: string }>;
             };
             Followers: {
                 GetRequests: () => Promise<{ found: true, requests: FollowRequest[] } | { found: false, message: string }>;
