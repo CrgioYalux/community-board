@@ -72,11 +72,6 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     Cookies.set(COOKIE_KEY, encrypted, { sameSite: 'Strict', expires: isNaN(expires) ? undefined : expires });
 
                     this.Reauth()
-                    .then((res) => {
-                        if (!res.found) return;
-
-                        setLogged(true);
-                    })
                     .catch(console.error);
                 })
                 .catch((err) => {
@@ -108,6 +103,7 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                         return;
                     }
                         
+                    setLogged(true);
                     setMember(res.data.payload);
                     resolve({ found: true });
                 })
