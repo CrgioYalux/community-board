@@ -28,7 +28,12 @@ enum CommonOperationQuery {
 
     DeleteEntity = `UPDATE entity e SET e.is_active = 0 WHERE e.id = ?`,
 
-    GetAffiliateFollowRequests = `SELECT * FROM affiliate_pending_follow_requests apfr WHERE apfr.followee_affiliate_id = ?`,
+    GetAffiliateFollowRequests = `
+        SELECT 
+            *
+        FROM affiliate_follow_requests afr
+        WHERE afr.consultant_affiliate_id = ?
+    `,
 };
 
 interface CommonOperation {
@@ -72,9 +77,9 @@ interface CommonOperation {
     GetAffiliateFollowRequests: {
         Action: (
             pool: PoolConnection,
-            payload: Pick<Affiliate, 'affiliate_id'>,
-        ) => Promise<SelectQueryActionReturn<Array<AffiliateFollowRequest>>>;
-        QueryReturnType: EffectlessQueryResult<AffiliateFollowRequest>;
+            payload: Pick<ViewAffiliateFollowRequests, 'consultant_affiliate_id'>,
+        ) => Promise<SelectQueryActionReturn<Array<ViewAffiliateFollowRequests>>>;
+        QueryReturnType: EffectlessQueryResult<ViewAffiliateFollowRequests>;
     };
 };
 
@@ -185,7 +190,7 @@ const DeleteEntity: CommonOperation['DeleteEntity']['Action'] = (pool, payload) 
 
 const GetAffiliateFollowRequests: CommonOperation['GetAffiliateFollowRequests']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
-        pool.query(CommonOperationQuery.GetAffiliateFollowRequests, [payload.affiliate_id], (err, results) => {
+        pool.query(CommonOperationQuery.GetAffiliateFollowRequests, [payload.consultant_affiliate_id], (err, results) => {
             if (err) {
                 reject({ getFollowRequestsError: err });
                 return;

@@ -65,17 +65,10 @@ type MemberLogin = Pick<Member, 'username' | 'password'>;
 type MemberIdentificator = Pick<Member, 'entity_id' | 'affiliate_id' | 'member_id'>;
 
 type MemberFollowRequest = {
-    member_follow_request_id: number;
+    follow_request_id: number;
     from_member_id: number;
     to_affiliate_id: number;
     is_accepted: boolean;
-};
-
-type AffiliateFollowRequest = {
-    member_follow_request_id: number;
-    followee_affiliate_id: number;
-    follower_member_id: number;
-    follower_username: string;
 };
 
 type Post = Entity & {
@@ -131,3 +124,12 @@ type ViewMemberFromMemberPov = {
     followers: number;
     created_at: Date;
 };
+
+type ViewAffiliateFollowRequests = {
+    username: string;
+    fullname: string;
+    affiliate_id: number;
+    follow_request_id: number;
+    consultant_affiliate_id: number;
+};
+

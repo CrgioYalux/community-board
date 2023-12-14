@@ -38,7 +38,7 @@ enum MemberOperationQuery {
     `,
     CheckIfFollowRequestExists = `
         SELECT
-            mfr.id AS member_follow_request_id
+            mfr.id AS follow_request_id
         FROM member_follow_request mfr
         WHERE mfr.from_member_id = ? AND mfr.to_affiliate_id = ?
     `,
@@ -113,8 +113,8 @@ interface MemberOperation {
         Action: (
             pool: PoolConnection,
             payload: Pick<MemberFollowRequest, 'from_member_id' | 'to_affiliate_id'>,
-        ) => Promise<SelectQueryActionReturn<Pick<MemberFollowRequest, 'member_follow_request_id'>>>;
-        QueryReturnType: EffectlessQueryResult<Pick<MemberFollowRequest, 'member_follow_request_id'>>;
+        ) => Promise<SelectQueryActionReturn<Pick<MemberFollowRequest, 'follow_request_id'>>>;
+        QueryReturnType: EffectlessQueryResult<Pick<MemberFollowRequest, 'follow_request_id'>>;
     };
     CheckIfPasswordMatch: {
         Action: (
@@ -193,20 +193,20 @@ interface MemberOperation {
         Action: (
             pool: PoolConnection,
             payload: Pick<MemberFollowRequest, 'from_member_id' | 'to_affiliate_id'>,
-        ) => Promise<InsertionQueryActionReturn<Pick<MemberFollowRequest, 'member_follow_request_id'>>>;
+        ) => Promise<InsertionQueryActionReturn<Pick<MemberFollowRequest, 'follow_request_id'>>>;
         QueryReturnType: EffectfulQueryResult;
     };
     AcceptFollowRequest: {
         Action: (
             pool: PoolConnection,
-            payload: Pick<MemberFollowRequest, 'member_follow_request_id' | 'to_affiliate_id'>,
-        ) => Promise<InsertionQueryActionReturn<Pick<MemberFollowRequest, 'member_follow_request_id' | 'is_accepted'>>>;
+            payload: Pick<MemberFollowRequest, 'follow_request_id' | 'to_affiliate_id'>,
+        ) => Promise<InsertionQueryActionReturn<Pick<MemberFollowRequest, 'follow_request_id' | 'is_accepted'>>>;
         QueryReturnType: EffectfulQueryResult;
     };
     DeleteFollowRequest: {
         Action: (
             pool: PoolConnection,
-            payload: Pick<MemberFollowRequest, 'member_follow_request_id' | 'to_affiliate_id'>,
+            payload: Pick<MemberFollowRequest, 'follow_request_id' | 'to_affiliate_id'>,
         ) => Promise<DeleteQueryActionReturn>;
         QueryReturnType: EffectfulQueryResult;
     };
@@ -843,7 +843,7 @@ const Follow: MemberOperation['Follow']['Action'] = (pool, payload) => {
                                     return;
                                 }
 
-                                resolve({ done: true, payload: { member_follow_request_id: parsed.insertId } });
+                                resolve({ done: true, payload: { follow_request_id: parsed.insertId } });
                             });
                         });
                     })
@@ -870,7 +870,7 @@ const Follow: MemberOperation['Follow']['Action'] = (pool, payload) => {
 
 const AcceptFollowRequest: MemberOperation['AcceptFollowRequest']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
-        pool.query(MemberOperationQuery.AcceptFollowRequest, [payload.member_follow_request_id, payload.to_affiliate_id], (err, results) => {
+        pool.query(MemberOperationQuery.AcceptFollowRequest, [payload.follow_request_id, payload.to_affiliate_id], (err, results) => {
             if (err) {
                 reject({ acceptFollowError: err });
                 return;
@@ -883,14 +883,14 @@ const AcceptFollowRequest: MemberOperation['AcceptFollowRequest']['Action'] = (p
                 return;
             }
 
-            resolve({ done: true, payload: { member_follow_request_id: payload.member_follow_request_id, is_accepted: true } });
+            resolve({ done: true, payload: { follow_request_id: payload.follow_request_id, is_accepted: true } });
         });
     });
 };
 
 const DeleteFollowRequest: MemberOperation['DeleteFollowRequest']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
-        pool.query(MemberOperationQuery.DeleteFollowRequest, [payload.member_follow_request_id, payload.to_affiliate_id], (err, results) => {
+        pool.query(MemberOperationQuery.DeleteFollowRequest, [payload.follow_request_id, payload.to_affiliate_id], (err, results) => {
             if (err) {
                 reject({ acceptFollowError: err });
                 return;

@@ -57,7 +57,7 @@ WITH follower AS (
 		m.username AS follower_username,
         m.id AS follower_member_id,
         mfr.id AS member_follow_request_id
-	FROM member m
+	FROM member_shortened m
     JOIN member_follow_request mfr ON m.id = mfr.from_member_id
 )
 SELECT
@@ -70,25 +70,6 @@ SELECT
 FROM member_follow_request mfr
 JOIN affiliate a ON a.id = mfr.to_affiliate_id
 JOIN member m ON a.id = m.affiliate_id
-JOIN follower f ON mfr.id = f.member_follow_request_id
-WHERE mfr.is_accepted = 0;
-
-CREATE OR REPLACE VIEW affiliate_pending_follow_requests AS
-WITH follower AS (
-	SELECT
-		m.username AS follower_username,
-        m.id AS follower_member_id,
-        mfr.id AS member_follow_request_id
-	FROM member m
-    JOIN member_follow_request mfr ON m.id = mfr.from_member_id
-)
-SELECT
-	mfr.id AS member_follow_request_id,
-	a.id AS followee_affiliate_id,
-    f.follower_member_id,
-    f.follower_username
-FROM member_follow_request mfr
-JOIN affiliate a ON a.id = mfr.to_affiliate_id
 JOIN follower f ON mfr.id = f.member_follow_request_id
 WHERE mfr.is_accepted = 0;
     
@@ -127,6 +108,25 @@ JOIN member_description md ON m.id = md.member_id
 LEFT JOIN member_followees mf ON m.id = mf.member_id 
 LEFT JOIN affiliate_followers af ON m.affiliate_id = af.affiliate_id
 WHERE e.is_active = 1;
+
+CREATE OR REPLACE VIEW affiliate_follow_requests AS
+WITH follower AS (
+	SELECT
+		ms.username,
+        ms.fullname,
+        ms.affiliate_id,
+        mfr.id AS follow_request_id
+	FROM member_shortened ms
+    JOIN member_follow_request mfr ON ms.member_id = mfr.from_member_id
+)
+SELECT
+	f.*,
+	a.id AS consultant_affiliate_id
+FROM member_follow_request mfr
+JOIN follower f ON mfr.id = f.follow_request_id
+JOIN affiliate a ON a.id = mfr.to_affiliate_id
+WHERE mfr.is_accepted = 0;
+-- where apfr.consultant_affiliate_id = ?
 
 CREATE OR REPLACE VIEW valid_posts AS
 WITH post_times_saved AS (

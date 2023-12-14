@@ -21,7 +21,7 @@ function Accept(request: Request, response: Response, next: NextFunction): void 
 
         const payload = {
             to_affiliate_id: Number(response.locals.session.affiliate_id),
-            member_follow_request_id: Number(request.params[0]),
+            follow_request_id: Number(request.params[0]),
         };
 
         Controller.Members.AcceptFollowRequest(connection, payload)
@@ -34,8 +34,8 @@ function Accept(request: Request, response: Response, next: NextFunction): void 
     });
 }
 
-function Decline(request: Request<Request['params'], {}, Pick<AffiliateFollowRequest, 'followee_affiliate_id'>>, response: Response, next: NextFunction): void {
-    if (request.body.followee_affiliate_id === undefined) {
+function Decline(request: Request, response: Response, next: NextFunction): void {
+    if (response.locals.session === undefined || response.locals.session.affiliate_id === undefined) {
         response.status(400).send({ message: 'There\'s empty required fields' });
         return;
     }
@@ -51,8 +51,8 @@ function Decline(request: Request<Request['params'], {}, Pick<AffiliateFollowReq
         }
 
         const payload = {
-            to_affiliate_id: Number(request.body.followee_affiliate_id),
-            member_follow_request_id: Number(request.params[0]),
+            to_affiliate_id: Number(response.locals.session.affiliate_id),
+            follow_request_id: Number(request.params[0]),
         };
 
         Controller.Members.DeleteFollowRequest(connection, payload)
@@ -81,9 +81,9 @@ function GetRequests(request: Request, response: Response, next: NextFunction): 
             return;
         }
 
-        const affiliate_id = Number(response.locals.session.affiliate_id);
+        const consultant_affiliate_id = Number(response.locals.session.affiliate_id);
 
-        Controller.Common.GetAffiliateFollowRequests(connection, { affiliate_id })
+        Controller.Common.GetAffiliateFollowRequests(connection, { consultant_affiliate_id })
         .then((res) => {
             connection.release();
 
