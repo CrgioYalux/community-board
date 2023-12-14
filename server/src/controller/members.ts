@@ -81,6 +81,14 @@ enum MemberOperationQuery {
         DELETE FROM member_follow_request mfr
         WHERE mfr.id = ?
     `,
+    GetFollowersListed = `
+        SELECT * FROM affiliate_followers_listed afl
+        WHERE afl.consultant_affiliate_id = ?
+    `,
+    GetFolloweesListed = `
+        SELECT * FROM affiliate_followees_listed afl
+        WHERE afl.consultant_affiliate_id = ?
+    `,
     
     // Delete is handled as entity by common controllers
 
@@ -220,6 +228,20 @@ interface MemberOperation {
             payload: Pick<MemberFollowRequest, 'follow_request_id'>,
         ) => Promise<DeleteQueryActionReturn>;
         QueryReturnType: EffectfulQueryResult;
+    };
+    GetFollowersListed: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<ViewAffiliateFollowRequests, 'consultant_affiliate_id'>,
+        ) => Promise<SelectQueryActionReturn<Array<ViewAffiliateFollowRequests>>>;
+        QueryReturnType: EffectlessQueryResult<ViewAffiliateFollowRequests>;
+    };
+    GetFolloweesListed: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<ViewAffiliateFollowRequests, 'consultant_affiliate_id'>,
+        ) => Promise<SelectQueryActionReturn<Array<ViewAffiliateFollowRequests>>>;
+        QueryReturnType: EffectlessQueryResult<ViewAffiliateFollowRequests>;
     };
 
     UpdateMemberDescription: {
@@ -939,6 +961,46 @@ const DeclineFollowRequest: MemberOperation['DeclineFollowRequest']['Action'] = 
     });
 };
 
+const GetFollowersListed: MemberOperation['GetFollowersListed']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.query(MemberOperationQuery.GetFollowersListed, [payload.consultant_affiliate_id], (err, results) => {
+            if (err) {
+                reject({ getFollowRequestsError: err });
+                return;
+            }
+
+            const parsed = results as MemberOperation['GetFollowersListed']['QueryReturnType'];
+
+            if (!parsed.length) {
+                resolve({ found: false, message: 'No followers found' });
+                return;
+            }
+
+            resolve({ found: true, payload: parsed });
+        });
+    });
+};
+
+const GetFolloweesListed: MemberOperation['GetFolloweesListed']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.query(MemberOperationQuery.GetFolloweesListed, [payload.consultant_affiliate_id], (err, results) => {
+            if (err) {
+                reject({ getFollowRequestsError: err });
+                return;
+            }
+
+            const parsed = results as MemberOperation['GetFolloweesListed']['QueryReturnType'];
+
+            if (!parsed.length) {
+                resolve({ found: false, message: 'No followees found' });
+                return;
+            }
+
+            resolve({ found: true, payload: parsed });
+        });
+    });
+};
+
 const UpdateMemberDescription: MemberOperation['UpdateMemberDescription']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
         pool.beginTransaction((err0) => {
@@ -1022,6 +1084,8 @@ const Members = {
     AcceptFollowRequest,
     DeleteFollowRequest,
     DeclineFollowRequest,
+    GetFollowersListed,
+    GetFolloweesListed,
     UpdateMemberDescription,
 };
 

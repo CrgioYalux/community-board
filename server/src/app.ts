@@ -27,6 +27,7 @@ function create() {
     app.use(API.Router.Members);
     app.use(API.Router.Affiliates);
     app.use(API.Router.Followers);
+    app.use(API.Router.Followees);
     app.use(API.Router.Posts);
     app.use(API.Router.Feed);
     

@@ -57,6 +57,29 @@ function Decline(request: Request, response: Response, next: NextFunction): void
     });
 }
 
+function Get(request: Request, response: Response, next: NextFunction): void {
+    db.pool.getConnection((err, connection) => {
+        if (err) {
+            connection.release();
+
+            const error = new Error('Could not connect to database');
+            next(error);
+
+            return;
+        }
+
+        const consultant_affiliate_id = Number(request.params[0]);
+
+        Controller.Members.GetFollowersListed(connection, { consultant_affiliate_id })
+        .then((res) => {
+            connection.release();
+
+            response.status(200).send(res);
+        })
+        .catch(next);
+    });
+}
+
 function GetRequests(request: Request, response: Response, next: NextFunction): void {
     if (response.locals.session === undefined || response.locals.session.affiliate_id === undefined) {
         response.status(400).send({ message: 'There\'s empty required fields' });
@@ -88,6 +111,7 @@ function GetRequests(request: Request, response: Response, next: NextFunction): 
 const Followers = {
     Accept,
     Decline,
+    Get,
     GetRequests,
 };
 

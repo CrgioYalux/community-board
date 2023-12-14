@@ -27,9 +27,14 @@ const AFFILIATES = {
 };
 
 const FOLLOWERS = {
+    GET: /^\/api\/followers\/affiliate\/(\d+)\/?$/,
     GET_REQUESTS: /^\/api\/followers\/requests\/?$/,
     ACCEPT_FOLLOW: /^\/api\/followers\/requests\/(\d+)\/accept\/?$/,
     DECLINE_FOLLOW: /^\/api\/followers\/requests\/(\d+)\/decline\/?$/,
+};
+
+const FOLLOWEES = {
+    GET: /^\/api\/followees\/affiliate\/(\d+)\/?$/,
 };
 
 const POSTS = {
@@ -50,6 +55,7 @@ const ROUTE = {
     MEMBERS,
     AFFILIATES,
     FOLLOWERS,
+    FOLLOWEES,
     POSTS,
     FEED,
 };

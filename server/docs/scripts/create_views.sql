@@ -231,3 +231,39 @@ LEFT JOIN member_followees mf ON m.id = mf.member_id
 LEFT JOIN affiliate_followers af ON m.affiliate_id = af.affiliate_id
 WHERE e.is_active = 1;
 -- m.username = ? AND mfr.consultant_member_id = ?;
+
+CREATE OR REPLACE VIEW affiliate_followers_listed AS
+WITH follower AS (
+	SELECT
+		ms.username,
+        ms.fullname,
+        ms.affiliate_id,
+        mfr.id AS follow_request_id
+	FROM member_shortened ms
+    JOIN member_follow_request mfr ON ms.member_id = mfr.from_member_id
+)
+SELECT
+	f.*,
+	a.id AS consultant_affiliate_id
+FROM member_follow_request mfr
+JOIN follower f ON mfr.id = f.follow_request_id
+JOIN affiliate a ON a.id = mfr.to_affiliate_id
+WHERE mfr.is_accepted = 1;
+
+CREATE OR REPLACE VIEW affiliate_followees_listed AS
+WITH followee AS (
+	SELECT
+		ms.username,
+        ms.fullname,
+        ms.affiliate_id,
+        mfr.id AS follow_request_id
+	FROM member_shortened ms
+    JOIN member_follow_request mfr ON ms.affiliate_id = mfr.to_affiliate_id
+)
+SELECT
+	f.*,
+	m.affiliate_id AS consultant_affiliate_id
+FROM member_follow_request mfr
+JOIN followee f ON mfr.id = f.follow_request_id
+JOIN member m ON m.id = mfr.from_member_id
+WHERE mfr.is_accepted = 1;
