@@ -35,11 +35,6 @@ function Accept(request: Request, response: Response, next: NextFunction): void 
 }
 
 function Decline(request: Request, response: Response, next: NextFunction): void {
-    if (response.locals.session === undefined || response.locals.session.affiliate_id === undefined) {
-        response.status(400).send({ message: 'There\'s empty required fields' });
-        return;
-    }
-
     db.pool.getConnection((err, connection) => {
         if (err) {
             connection.release();
@@ -50,12 +45,9 @@ function Decline(request: Request, response: Response, next: NextFunction): void
             return;
         }
 
-        const payload = {
-            to_affiliate_id: Number(response.locals.session.affiliate_id),
-            follow_request_id: Number(request.params[0]),
-        };
+        const follow_request_id = Number(request.params[0]);
 
-        Controller.Members.DeleteFollowRequest(connection, payload)
+        Controller.Members.DeclineFollowRequest(connection, { follow_request_id })
         .then((res) => {
             connection.release();
 

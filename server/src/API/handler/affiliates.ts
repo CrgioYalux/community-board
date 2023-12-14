@@ -34,8 +34,8 @@ function Follow(request: Request, response: Response, next: NextFunction): void 
     });
 }
 
-function Unfollow(request: Request<Request['params'], {}, Pick<MemberFollowRequest, 'follow_request_id'>>, response: Response, next: NextFunction): void {
-    if (request.body.follow_request_id === undefined) {
+function Unfollow(request: Request, response: Response, next: NextFunction): void {
+    if (response.locals.session === undefined || response.locals.session.member_id === undefined) {
         response.status(400).send({ message: 'There\'s empty required fields' });
         return;
     }
@@ -51,7 +51,7 @@ function Unfollow(request: Request<Request['params'], {}, Pick<MemberFollowReque
         }
 
         const payload = {
-            follow_request_id: Number(request.body.follow_request_id),
+            from_member_id: Number(response.locals.session.member_id),
             to_affiliate_id: Number(request.params[0]),
         };
 

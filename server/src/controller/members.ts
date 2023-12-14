@@ -75,7 +75,11 @@ enum MemberOperationQuery {
     `,
     DeleteFollowRequest = `
         DELETE FROM member_follow_request mfr
-        WHERE mfr.id = ? AND mfr.to_affiliate_id = ?
+        WHERE mfr.from_member_id = ? AND mfr.to_affiliate_id = ?
+    `,
+    DeclineFollowRequest = `
+        DELETE FROM member_follow_request mfr
+        WHERE mfr.id = ?
     `,
     
     // Delete is handled as entity by common controllers
@@ -206,7 +210,14 @@ interface MemberOperation {
     DeleteFollowRequest: {
         Action: (
             pool: PoolConnection,
-            payload: Pick<MemberFollowRequest, 'follow_request_id' | 'to_affiliate_id'>,
+            payload: Pick<MemberFollowRequest, 'from_member_id' | 'to_affiliate_id'>,
+        ) => Promise<DeleteQueryActionReturn>;
+        QueryReturnType: EffectfulQueryResult;
+    };
+    DeclineFollowRequest: {
+        Action: (
+            pool: PoolConnection,
+            payload: Pick<MemberFollowRequest, 'follow_request_id'>,
         ) => Promise<DeleteQueryActionReturn>;
         QueryReturnType: EffectfulQueryResult;
     };
@@ -890,7 +901,7 @@ const AcceptFollowRequest: MemberOperation['AcceptFollowRequest']['Action'] = (p
 
 const DeleteFollowRequest: MemberOperation['DeleteFollowRequest']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
-        pool.query(MemberOperationQuery.DeleteFollowRequest, [payload.follow_request_id, payload.to_affiliate_id], (err, results) => {
+        pool.query(MemberOperationQuery.DeleteFollowRequest, [payload.from_member_id, payload.to_affiliate_id], (err, results) => {
             if (err) {
                 reject({ acceptFollowError: err });
                 return;
@@ -899,7 +910,7 @@ const DeleteFollowRequest: MemberOperation['DeleteFollowRequest']['Action'] = (p
             const parsed = results as MemberOperation['DeleteFollowRequest']['QueryReturnType'];
 
             if (!parsed.affectedRows) {
-                resolve({ done: false, message: 'Could not decline or delete the follow request' });
+                resolve({ done: false, message: 'Could not delete the follow request' });
                 return;
             }
 
@@ -908,6 +919,25 @@ const DeleteFollowRequest: MemberOperation['DeleteFollowRequest']['Action'] = (p
     });
 };
 
+const DeclineFollowRequest: MemberOperation['DeclineFollowRequest']['Action'] = (pool, payload) => {
+    return new Promise((resolve, reject) => {
+        pool.query(MemberOperationQuery.DeclineFollowRequest, [payload.follow_request_id], (err, results) => {
+            if (err) {
+                reject({ acceptFollowError: err });
+                return;
+            }
+
+            const parsed = results as MemberOperation['DeclineFollowRequest']['QueryReturnType'];
+
+            if (!parsed.affectedRows) {
+                resolve({ done: false, message: 'Could not decline the follow request' });
+                return;
+            }
+
+            resolve({ done: true });
+        });
+    });
+};
 
 const UpdateMemberDescription: MemberOperation['UpdateMemberDescription']['Action'] = (pool, payload) => {
     return new Promise((resolve, reject) => {
@@ -991,6 +1021,7 @@ const Members = {
     Follow,
     AcceptFollowRequest,
     DeleteFollowRequest,
+    DeclineFollowRequest,
     UpdateMemberDescription,
 };
 
