@@ -8,12 +8,12 @@ enum MemberOperationQuery {
     // Helpers
     CheckIfValidMemberByID = `
         SELECT
-            IF(e.is_active = 1, TRUE, FALSE) AS is_active,
+            (e.is_active = 1) AS is_active,
             e.id AS entity_id,
             a.id AS affiliate_id,
             m.id AS member_id,
-            IF(md.member_id IS NULL, FALSE, TRUE) AS has_description,
-            IF(md.is_private IS NULL, NULL, IF(md.is_private = 1, TRUE, FALSE)) AS is_private
+            is_private,
+            (md.member_id IS NOT NULL) AS has_description
         FROM entity e
         JOIN affiliate a ON e.id = a.entity_id
         JOIN member m ON a.id = m.affiliate_id
@@ -23,12 +23,12 @@ enum MemberOperationQuery {
     `,
     CheckIfValidMemberByUsername = `
         SELECT
-            IF(e.is_active = 1, TRUE, FALSE) AS is_active,
             e.id AS entity_id,
             a.id AS affiliate_id,
             m.id AS member_id,
-            IF(md.member_id IS NULL, FALSE, TRUE) AS has_description,
-            IF(md.is_private IS NULL, NULL, IF(md.is_private = 1, TRUE, FALSE)) AS is_private
+            (e.is_active = 1) AS is_active,
+            (md.is_private = 1) AS is_private,
+            (md.member_id IS NOT NULL) AS has_description
         FROM entity e
         JOIN affiliate a ON e.id = a.entity_id
         JOIN member m ON a.id = m.affiliate_id
@@ -52,8 +52,8 @@ enum MemberOperationQuery {
 
     GetFromMemberPovByUsername = `
         SELECT 
-            IF(mfr.id IS NULL, FALSE, TRUE) AS follow_requested_by_consultant,
-            IF(mfr.is_accepted IS NULL, IF(me.is_private = 1, FALSE, TRUE), IF(mfr.is_accepted = 1, TRUE, FALSE)) AS is_consultant_allowed,
+            (mfr.id IS NOT NULL) AS follow_requested_by_consultant,
+            IF(mfr.is_accepted IS NULL, (me.is_private = 0), (mfr.is_accepted = 1)) AS is_consultant_allowed,
             mfr.from_member_id AS consultant_member_id,
             me.*
         FROM member_extended me
@@ -73,7 +73,11 @@ enum MemberOperationQuery {
     // Create
     CreateMember = `INSERT INTO member (affiliate_id, username) VALUES (?, ?)`,
     CreateMemberAuth = `INSERT INTO member_auth (member_id, salt, hash) VALUES (?, ?, ?)`,
-    CreateMemberDescription = `INSERT INTO member_description (member_id, email, fullname, bio, birthdate, is_private) VALUES (?, ?, ?, ?, ?, IF(? IS NULL, 0, ?))`,
+    CreateMemberDescription = `
+        INSERT INTO member_description 
+            (member_id, email, fullname, bio, birthdate, is_private)
+        VALUES 
+            (?, ?, ?, ?, ?, COALESCE(?, 0))`,
 
     // Follow
     Follow = `INSERT INTO member_follow_request (from_member_id, to_affiliate_id, is_accepted) VALUES (?, ?, ?)`,
@@ -107,11 +111,11 @@ enum MemberOperationQuery {
     UpdateMemberDescription = `
         UPDATE member_description md
         SET
-            md.email = IF(? IS NULL, md.email, ?),
-            md.fullname = IF(? IS NULL, md.fullname, ?),
-            md.bio = IF(? IS NULL, md.bio, ?),
-            md.birthdate = IF(? IS NULL, md.birthdate, ?),
-            md.is_private = IF(? IS NULL, md.is_private, ?)
+            md.email = COALESCE(?, md.email),
+            md.fullname = COALESCE(?, md.fullname),
+            md.bio = COALESCE(?, md.bio),
+            md.birthdate = COALESCE(?, md.birthdate),
+            md.is_private = COALESCE(?, md.is_private)
         WHERE
             md.member_id = ?
     `,
@@ -540,7 +544,16 @@ const CreateMemberDescription: MemberOperation['CreateMemberDescription']['Actio
                     return;
                 }
 
-                pool.query(MemberOperationQuery.CreateMemberDescription, [payload.member_id, payload.email ?? null, payload.fullname ?? null, payload.bio ?? null, payload.birthdate ?? null, payload.is_private ?? null, payload.is_private], (err2, results) => {
+                const values = [
+                    payload.member_id,
+                    payload.email ?? null,
+                    payload.fullname ?? null,
+                    payload.bio ?? null,
+                    payload.birthdate ?? null,
+                    payload.is_private ?? null
+                ];
+
+                pool.query(MemberOperationQuery.CreateMemberDescription, values, (err2, results) => {
                     if (err2) {
                         pool.rollback(() => {
                             reject({ createMemberDescriptionError: err2 });
@@ -1037,11 +1050,11 @@ const UpdateMemberDescription: MemberOperation['UpdateMemberDescription']['Actio
                 }
 
                 const values = [
-                    payload.email ?? null, payload.email,
-                    payload.fullname ?? null, payload.fullname,
-                    payload.bio ?? null, payload.bio,
-                    payload.birthdate ?? null, payload.birthdate,
-                    payload.is_private ?? null, payload.is_private,
+                    payload.email ?? null,
+                    payload.fullname ?? null,
+                    payload.bio ?? null,
+                    payload.birthdate ?? null,
+                    payload.is_private ?? null,
                     payload.member_id
                 ];
 
