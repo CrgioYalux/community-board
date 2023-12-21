@@ -6,13 +6,13 @@ enum CommonOperationQuery {
     `,
     CheckIfValidAffiliateByID = `
         SELECT
-            IF(e.is_active = 1, TRUE, FALSE) AS is_active,
             e.id AS entity_id,
             a.id AS affiliate_id,
-            IF(m.id IS NULL, FALSE, TRUE) AS is_member,
-            IF(b.id IS NULL, FALSE, TRUE) AS is_board,
-            IF(md.member_id IS NULL, IF(bd.board_id IS NULL, FALSE, TRUE), TRUE) AS has_description,
-            IF(md.is_private IS NULL, NULL, IF(md.is_private = 1, TRUE, FALSE)) AS is_private
+            (e.is_active = 1) AS is_active,
+            (b.id IS NOT NULL) AS is_board,
+            (m.id IS NOT NULL) AS is_member,
+            (md.is_private = 1) AS is_private,
+            IF(md.member_id IS NULL, (bd.board_id IS NOT NULL), TRUE) AS has_description
         FROM entity e
         JOIN affiliate a ON e.id = a.entity_id
         LEFT JOIN member m ON a.id = m.affiliate_id
