@@ -13,19 +13,19 @@ const Saved: React.FC = () => {
 
     const API = useAPI();
 
-    useEffect(() => {
+    const fetchSaved = (): void => {
         API.Actions.Feed.GetSaved()
         .then((res) => {
-            if (res.found) {
-                setPosts(res.posts);
-                return;
-            }
+            setPosts(res.found ? res.posts : []);
         })
         .catch(() => {
             setError('An error occurred while fetching');
         });
-    }, []);
+    };
 
+    useEffect(() => {
+        fetchSaved();
+    }, []);
 
     useEffect(() => {
         const fakeLoading = setTimeout(() => {
@@ -44,6 +44,7 @@ const Saved: React.FC = () => {
             setPosts={setPosts}
             loading={API.Value.fetching || loading}
             error={error}
+            refetch={fetchSaved}
             />
             <div className='flex-initial flex flex-row gap-1 items-center'>
                 <Divider className='h-1 flex-auto' />

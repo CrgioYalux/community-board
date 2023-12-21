@@ -159,6 +159,26 @@ const APIContextProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 });
             });
         },
+        Delete(payload) {
+            return new Promise((resolve, reject) => {
+                const token = utils.GetToken();
+
+                if (token === undefined) {
+                    reject({ postsDeleteError: 'No token found' });
+                    return;
+                }
+
+                axios.delete<APIAction.Posts.Delete.Result>(`${API_BASE_PATH}/posts/${payload.post_id}/delete`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                })
+                .then((res) => {
+                    resolve(res.data);
+                })
+                .catch((err) => {
+                    reject({ postsDeleteError: err });
+                });
+            });
+        },
     };
 
     const Feed: API.Context['Actions']['Feed'] = {

@@ -36,9 +36,7 @@ const MemberByUsername: React.FC = () => {
 
             API.Actions.Feed.GetFromAffiliateID({ affiliate_id: res.member.affiliate_id })
             .then((res1) => {
-                if (!res1.found) return;
-
-                setPosts(res1.posts);
+                setPosts(res1.found ? res1.posts : []);
             })
             .catch(() => {
                 setError('An error occurred while fetching');
@@ -210,6 +208,7 @@ const MemberByUsername: React.FC = () => {
             setPosts={setPosts}
             loading={API.Value.fetching || loadingPosts}
             error={error}
+            refetch={fetchMember}
             />
             <div className='flex-initial flex flex-row gap-1 items-center'>
                 <Divider className='h-1 flex-auto' />

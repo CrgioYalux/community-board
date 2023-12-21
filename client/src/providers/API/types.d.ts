@@ -140,6 +140,17 @@ export namespace APIAction {
                 message: string;
             };
         };
+        namespace Delete {
+            type Payload = {
+                post_id: number;
+            };
+            type Result = {
+                deleted: true;
+            } | {
+                deleted: false;
+                message: string;
+            };
+        };
     };
     namespace Feed {
         namespace Get {
@@ -319,6 +330,7 @@ export namespace API {
             Posts: {
                 SwitchSave: (payload: APIAction.Posts.SwitchSave.Payload) => Promise<{ done: boolean }>;
                 Create: (payload: APIAction.Posts.Create.Payload) => Promise<{ created: true, post: { post_id: number } } | { created: false, message: string }>;
+                Delete: (payload: APIAction.Posts.Delete.Payload) => Promise<{ deleted: true } | { deleted: false, message: string }>;
             };
             Feed: {
                 Get: () => Promise<{ found: true, posts: Post[] } | { found: false, message: string }>;
