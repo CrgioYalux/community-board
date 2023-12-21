@@ -13,7 +13,7 @@ import Lock from '../../components/Icons/Lock';
 import EditProfile from "../../components/EditProfile";
 import Pen from "../../components/Icons/Pen";
 
-const MemberByID: React.FC = () => {
+const MemberByUsername: React.FC = () => {
     const params = useParams<{ username: string }>();
     const [member, setMember] = useState<MemberFromMemberPov | null>(null);
     const [posts, setPosts] = useState<Post[]>([]);
@@ -49,7 +49,7 @@ const MemberByID: React.FC = () => {
 
     useEffect(() => {
         fetchMember();
-    }, []);
+    }, [params.username]);
 
     useEffect(() => {
         const fakeLoading = setTimeout(() => {
@@ -220,4 +220,4 @@ const MemberByID: React.FC = () => {
     );
 };
 
-export default MemberByID;
+export default MemberByUsername;

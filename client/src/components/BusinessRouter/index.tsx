@@ -8,7 +8,7 @@ import Login from "../../pages/Login";
 import Register from '../../pages/Register';
 import Home from '../../pages/Home';
 import Saved from '../../pages/Saved';
-import MemberByID from '../../pages/MemberByID';
+import MemberByUsername from '../../pages/MemberByUsername';
 import NotFound from '../../pages/NotFound';
 import FollowRequests from '../../pages/FollowRequests';
 import AffiliateFollowers from '../../pages/AffiliateFollowers';
@@ -54,7 +54,7 @@ const BusinessRouter: React.FC = () => {
                     <Route path='saved'>
                         <Route index element={<Saved />} />
                     </Route>
-                    <Route path='members/:username' element={<MemberByID />}/>
+                    <Route path='members/:username' element={<MemberByUsername />}/>
                     <Route path='affiliates/:affiliate_id'>
                         <Route path='followers' element={<AffiliateFollowers />}/>
                         <Route path='followees' element={<AffiliateFollowees />}/>
