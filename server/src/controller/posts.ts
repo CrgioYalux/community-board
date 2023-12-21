@@ -10,7 +10,7 @@ enum PostOperationQuery {
     Get = `
         SELECT 
             ps.affiliate_id AS consultant_affiliate_id,
-            IF(ps.affiliate_id IS NULL, FALSE, TRUE) AS saved_by_consultant,
+            (ps.affiliate_id IS NOT NULL) AS saved_by_consultant,
             f.*
         FROM feed f
         LEFT JOIN post_saved ps ON ps.post_id = f.post_id AND ps.affiliate_id = ?
@@ -19,7 +19,7 @@ enum PostOperationQuery {
     GetFromAffiliateID = `
         SELECT 
             ps.affiliate_id AS consultant_affiliate_id,
-            IF(ps.affiliate_id IS NULL, FALSE, TRUE) AS saved_by_consultant,
+            (ps.affiliate_id IS NOT NULL) AS saved_by_consultant,
             f.*
         FROM feed f
         LEFT JOIN post_saved ps ON ps.post_id = f.post_id AND ps.affiliate_id = ?
