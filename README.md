@@ -2,6 +2,7 @@
 
 - [Server README](/server/README.md)
 - [Client README](/client/README.md)
+- [Some screenshots](/docs/screenshots.md)
 
 ## To run it locally
 
