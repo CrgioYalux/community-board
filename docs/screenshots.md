@@ -15,9 +15,6 @@
 - The User's Profile Page in Edit Mode  
 ![Edit Profile Page](/docs/images/CommunityBoard_EditProfile_Page.png)
 
-- The User's Profile Page in Edit Mode  
-![Edit Profile Page](/docs/images/CommunityBoard_EditProfile_Page.png)
-
 - The User's Profile Page from Another User's POV  
 ![Profile Page](/docs/images/CommunityBoard_OthersProfile_Page.png)
 
