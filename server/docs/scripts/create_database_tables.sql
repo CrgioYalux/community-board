@@ -136,17 +136,17 @@ CREATE TABLE IF NOT EXISTS post_comment (
     REFERENCES post (id)
 );
 
-DROP TABLE IF EXISTS post_comment;
-DROP TABLE IF EXISTS post_saved;
-DROP TABLE IF EXISTS post_membership;
-DROP TABLE IF EXISTS post;
-DROP TABLE IF EXISTS board_description;
-DROP TABLE IF EXISTS board;
-DROP TABLE IF EXISTS member_follow_request;
-DROP TABLE IF EXISTS member_description;
-DROP TABLE IF EXISTS member_auth;
-DROP TABLE IF EXISTS member;
-DROP TABLE IF EXISTS affiliate;
-DROP TABLE IF EXISTS entity;
+#DROP TABLE IF EXISTS post_comment;
+#DROP TABLE IF EXISTS post_saved;
+#DROP TABLE IF EXISTS post_membership;
+#DROP TABLE IF EXISTS post;
+#DROP TABLE IF EXISTS board_description;
+#DROP TABLE IF EXISTS board;
+#DROP TABLE IF EXISTS member_follow_request;
+#DROP TABLE IF EXISTS member_description;
+#DROP TABLE IF EXISTS member_auth;
+#DROP TABLE IF EXISTS member;
+#DROP TABLE IF EXISTS affiliate;
+#DROP TABLE IF EXISTS entity;
 
 SHOW TABLES;
