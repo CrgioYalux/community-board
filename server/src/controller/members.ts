@@ -3,7 +3,6 @@ import type { PoolConnection } from 'mysql';
 import bcrypt from 'bcrypt';
 import Common from './common';
 import Helper from '../helper';
-
 enum MemberOperationQuery {
     // Helpers
     CheckIfValidMemberByID = `
@@ -59,15 +58,6 @@ enum MemberOperationQuery {
         FROM member_extended me
         LEFT JOIN member_follow_request mfr ON mfr.to_affiliate_id = me.affiliate_id AND mfr.from_member_id = ?
         WHERE me.username = ? 
-    `,
-    AuxGetFromMemberPovByUsername = `
-        SELECT 
-            *
-        FROM member_from_member_pov mfmp
-        WHERE 
-            (mfmp.username = ?)
-            AND
-            (mfmp.consultant_member_id = ? OR mfmp.consultant_member_id IS NULL)
     `,
 
     // Create
