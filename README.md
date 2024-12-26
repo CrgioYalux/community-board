@@ -6,6 +6,18 @@
 
 ## To run it locally
 
+- Start backend server on prod mode and database processes with:
+```bash
+    $ cd server && docker compose -f docker-compose.yml up
+```
+- Start frontend server on dev mode with:
+```bash
+    $ yarn run dev:client
+```
+
+---
+
+## This was before using docker
 ### Need this installed
 - MySQL: a version equal or compatible with [8.0.33](https://dev.mysql.com/doc/relnotes/mysql/8.0/en/news-8-0-33.html).
 
