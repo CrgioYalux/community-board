@@ -1,4 +1,4 @@
-import type { PoolConnection } from 'mysql';
+import type { PoolConnection } from 'mysql2';
 
 import bcrypt from 'bcrypt';
 import Common from './common';

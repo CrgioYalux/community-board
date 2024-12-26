@@ -14,7 +14,7 @@ function tryDBConnection(): Promise<{ connected: true }> {
         environment.SHOW_LOGS && console.log('Testing database connection');
 
         db.pool.getConnection((err, connection) => {
-            connection.release();
+            connection?.release();
 
             if (err) {
                 reject({ getDatabaseConnectionError: err });

@@ -1,4 +1,4 @@
-import type { PoolConnection } from 'mysql';
+import type { PoolConnection } from 'mysql2';
 import Common from './common';
 
 enum PostOperationQuery {

@@ -9,7 +9,7 @@ type Database = {
     NAME: string;
 };
 
-const IS_PROD: boolean = process.env.NODE_ENV === 'production';
+const IS_PROD: boolean = process.env.NODE_ENV !== 'dev';
 const SHOW_LOGS: boolean = process.env.RUN_MODE === 'logs';
 const PATH_TO_ENV_FILE: string = path.join(__dirname, '..', '.env');
 const SECRET_KEY: string = 'INCREDIBLY_SAFE_SECRET_KEY';
