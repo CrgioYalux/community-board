@@ -1,0 +1,20 @@
+name: community_board_database
+
+services:
+  db:
+    image: 'mysql'
+    environment:
+      MYSQL_ROOT_PASSWORD: some_password
+      MYSQL_DATABASE: community_board
+    ports:
+      - "3308:3306"
+    volumes:
+      - db-data:/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+volumes:
+  db-data:
