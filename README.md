@@ -6,9 +6,13 @@
 
 ## To run it locally
 
-- Start backend server on prod mode and database processes with:
+- Use docker to start database process with:
 ```bash
-    $ cd server && docker compose -f docker-compose.yml up
+    $ cd server && docker compose -f docker-compose-db-only.yml up
+```
+- Start backend server on dev mode with:
+```bash
+    $ yarn run dev:server
 ```
 - Start frontend server on dev mode with:
 ```bash
