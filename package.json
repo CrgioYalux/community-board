@@ -18,6 +18,7 @@
     "build:server": "yarn --cwd server build",
     "build:both": "npm-run-all build:server build:client",
     "start:server": "yarn --cwd server start",
+    "start:db": "yarn --cwd server db",
     "start": "npm-run-all build:both start:server"
   },
   "devDependencies": {

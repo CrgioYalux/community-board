@@ -6,7 +6,9 @@
     "dev": "cross-env NODE_ENV=dev nodemon src/index.ts",
     "dev:logs": "cross-env NODE_ENV=dev RUN_MODE=logs nodemon src/index.ts",
     "start": "node dist/src/index.js",
-    "build": "tsc"
+    "build": "tsc",
+    "db": "sudo docker compose -f docker-compose-db-only.yml up"
+
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
