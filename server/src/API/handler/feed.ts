@@ -4,94 +4,120 @@ import db from '../../db';
 import Controller from '../../controller';
 
 function Get(request: Request, response: Response, next: NextFunction): void {
-    if (response.locals.session === undefined || response.locals.session.affiliate_id === undefined) {
-        response.status(400).send({ message: 'There\'s empty required fields' });
-        return;
-    }
+	if (
+		response.locals.session === undefined ||
+		response.locals.session.affiliate_id === undefined
+	) {
+		response.status(400).send({ message: "There's empty required fields" });
+		return;
+	}
 
-    db.pool.getConnection((err, connection) => {
-        if (err) {
-            connection.release();
-            
-            const error = new Error('Could not connect to database');
-            next(error);
+	db.pool.getConnection((err, connection) => {
+		if (err) {
+			connection.release();
 
-            return;
-        }
+			const error = new Error('Could not connect to database');
+			next(error);
 
-        const consultant_affiliate_id = Number(response.locals.session.affiliate_id);
+			return;
+		}
 
-        Controller.Posts.Get(connection, { consultant_affiliate_id })
-        .then((res) => {
-            connection.release();
+		const consultant_affiliate_id = Number(
+			response.locals.session.affiliate_id
+		);
 
-            response.status(200).send(res);
-        })
-        .catch(next);
-    });
+		Controller.Posts.Get(connection, { consultant_affiliate_id })
+			.then((res) => {
+				connection.release();
+
+				response.status(200).send(res);
+			})
+			.catch(next);
+	});
 }
 
-function GetFromAffiliateID(request: Request, response: Response, next: NextFunction): void {
-    if (response.locals.session === undefined || response.locals.session.affiliate_id === undefined) {
-        response.status(400).send({ message: 'There\'s empty required fields' });
-        return;
-    }
+function GetFromAffiliateID(
+	request: Request,
+	response: Response,
+	next: NextFunction
+): void {
+	if (
+		response.locals.session === undefined ||
+		response.locals.session.affiliate_id === undefined
+	) {
+		response.status(400).send({ message: "There's empty required fields" });
+		return;
+	}
 
-    db.pool.getConnection((err, connection) => {
-        if (err) {
-            connection.release();
-            
-            const error = new Error('Could not connect to database');
-            next(error);
+	db.pool.getConnection((err, connection) => {
+		if (err) {
+			connection.release();
 
-            return;
-        }
+			const error = new Error('Could not connect to database');
+			next(error);
 
-        const consultant_affiliate_id = Number(response.locals.session.affiliate_id);
-        const post_membership_affiliate_id = Number(request.params[0]);
+			return;
+		}
 
-        Controller.Posts.GetFromAffiliateID(connection, { consultant_affiliate_id, post_membership_affiliate_id })
-        .then((res) => {
-            connection.release();
+		const consultant_affiliate_id = Number(
+			response.locals.session.affiliate_id
+		);
+		const post_membership_affiliate_id = Number(request.params[0]);
 
-            response.status(200).send(res);
-        })
-        .catch(next);
-    });
-};
+		Controller.Posts.GetFromAffiliateID(connection, {
+			consultant_affiliate_id,
+			post_membership_affiliate_id,
+		})
+			.then((res) => {
+				connection.release();
 
-function GetSaved(request: Request, response: Response, next: NextFunction): void {
-    if (response.locals.session === undefined || response.locals.session.affiliate_id === undefined) {
-        response.status(400).send({ message: 'There\'s empty required fields' });
-        return;
-    }
+				response.status(200).send(res);
+			})
+			.catch(next);
+	});
+}
 
-    db.pool.getConnection((err, connection) => {
-        if (err) {
-            connection.release();
-            
-            const error = new Error('Could not connect to database');
-            next(error);
+function GetSaved(
+	request: Request,
+	response: Response,
+	next: NextFunction
+): void {
+	if (
+		response.locals.session === undefined ||
+		response.locals.session.affiliate_id === undefined
+	) {
+		response.status(400).send({ message: "There's empty required fields" });
+		return;
+	}
 
-            return;
-        }
+	db.pool.getConnection((err, connection) => {
+		if (err) {
+			connection.release();
 
-        const consultant_affiliate_id = Number(response.locals.session.affiliate_id);
+			const error = new Error('Could not connect to database');
+			next(error);
 
-        Controller.Posts.GetSaved(connection, { consultant_affiliate_id })
-        .then((res) => {
-            connection.release();
+			return;
+		}
 
-            response.status(200).send(res);
-        })
-        .catch(next);
-    });
+		const consultant_affiliate_id = Number(
+			response.locals.session.affiliate_id
+		);
+
+		Controller.Posts.GetSaved(connection, { consultant_affiliate_id })
+			.then((res) => {
+				connection.release();
+
+				response.status(200).send(res);
+			})
+			.catch(next);
+	});
 }
 
 const Feed = {
-    Get,
-    GetFromAffiliateID,
-    GetSaved,
+	Get,
+	GetFromAffiliateID,
+	GetSaved,
 };
 
 export default Feed;

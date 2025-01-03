@@ -3,116 +3,142 @@ import type { Request, Response, NextFunction } from 'express';
 import Controller from '../../controller';
 import db from '../../db';
 
-function Accept(request: Request, response: Response, next: NextFunction): void {
-    if (response.locals.session === undefined || response.locals.session.affiliate_id === undefined) {
-        response.status(400).send({ message: 'There\'s empty required fields' });
-        return;
-    }
+function Accept(
+	request: Request,
+	response: Response,
+	next: NextFunction
+): void {
+	if (
+		response.locals.session === undefined ||
+		response.locals.session.affiliate_id === undefined
+	) {
+		response.status(400).send({ message: "There's empty required fields" });
+		return;
+	}
 
-    db.pool.getConnection((err, connection) => {
-        if (err) {
-            connection.release();
+	db.pool.getConnection((err, connection) => {
+		if (err) {
+			connection.release();
 
-            const error = new Error('Could not connect to database');
-            next(error);
+			const error = new Error('Could not connect to database');
+			next(error);
 
-            return;
-        }
+			return;
+		}
 
-        const payload = {
-            to_affiliate_id: Number(response.locals.session.affiliate_id),
-            follow_request_id: Number(request.params[0]),
-        };
+		const payload = {
+			to_affiliate_id: Number(response.locals.session.affiliate_id),
+			follow_request_id: Number(request.params[0]),
+		};
 
-        Controller.Members.AcceptFollowRequest(connection, payload)
-        .then((res) => {
-            connection.release();
+		Controller.Members.AcceptFollowRequest(connection, payload)
+			.then((res) => {
+				connection.release();
 
-            response.status(200).send(res);
-        })
-        .catch(next);
-    });
+				response.status(200).send(res);
+			})
+			.catch(next);
+	});
 }
 
-function Decline(request: Request, response: Response, next: NextFunction): void {
-    db.pool.getConnection((err, connection) => {
-        if (err) {
-            connection.release();
+function Decline(
+	request: Request,
+	response: Response,
+	next: NextFunction
+): void {
+	db.pool.getConnection((err, connection) => {
+		if (err) {
+			connection.release();
 
-            const error = new Error('Could not connect to database');
-            next(error);
+			const error = new Error('Could not connect to database');
+			next(error);
 
-            return;
-        }
+			return;
+		}
 
-        const follow_request_id = Number(request.params[0]);
+		const follow_request_id = Number(request.params[0]);
 
-        Controller.Members.DeclineFollowRequest(connection, { follow_request_id })
-        .then((res) => {
-            connection.release();
+		Controller.Members.DeclineFollowRequest(connection, {
+			follow_request_id,
+		})
+			.then((res) => {
+				connection.release();
 
-            response.status(200).send(res);
-        })
-        .catch(next);
-    });
+				response.status(200).send(res);
+			})
+			.catch(next);
+	});
 }
 
 function Get(request: Request, response: Response, next: NextFunction): void {
-    db.pool.getConnection((err, connection) => {
-        if (err) {
-            connection.release();
+	db.pool.getConnection((err, connection) => {
+		if (err) {
+			connection.release();
 
-            const error = new Error('Could not connect to database');
-            next(error);
+			const error = new Error('Could not connect to database');
+			next(error);
 
-            return;
-        }
+			return;
+		}
 
-        const consultant_affiliate_id = Number(request.params[0]);
+		const consultant_affiliate_id = Number(request.params[0]);
 
-        Controller.Members.GetFollowersListed(connection, { consultant_affiliate_id })
-        .then((res) => {
-            connection.release();
+		Controller.Members.GetFollowersListed(connection, {
+			consultant_affiliate_id,
+		})
+			.then((res) => {
+				connection.release();
 
-            response.status(200).send(res);
-        })
-        .catch(next);
-    });
+				response.status(200).send(res);
+			})
+			.catch(next);
+	});
 }
 
-function GetRequests(request: Request, response: Response, next: NextFunction): void {
-    if (response.locals.session === undefined || response.locals.session.affiliate_id === undefined) {
-        response.status(400).send({ message: 'There\'s empty required fields' });
-        return;
-    }
+function GetRequests(
+	request: Request,
+	response: Response,
+	next: NextFunction
+): void {
+	if (
+		response.locals.session === undefined ||
+		response.locals.session.affiliate_id === undefined
+	) {
+		response.status(400).send({ message: "There's empty required fields" });
+		return;
+	}
 
-    db.pool.getConnection((err, connection) => {
-        if (err) {
-            connection.release();
+	db.pool.getConnection((err, connection) => {
+		if (err) {
+			connection.release();
 
-            const error = new Error('Could not connect to database');
-            next(error);
+			const error = new Error('Could not connect to database');
+			next(error);
 
-            return;
-        }
+			return;
+		}
 
-        const consultant_affiliate_id = Number(response.locals.session.affiliate_id);
+		const consultant_affiliate_id = Number(
+			response.locals.session.affiliate_id
+		);
 
-        Controller.Common.GetAffiliateFollowRequests(connection, { consultant_affiliate_id })
-        .then((res) => {
-            connection.release();
+		Controller.Common.GetAffiliateFollowRequests(connection, {
+			consultant_affiliate_id,
+		})
+			.then((res) => {
+				connection.release();
 
-            response.status(200).send(res);
-        })
-        .catch(next);
-    });
+				response.status(200).send(res);
+			})
+			.catch(next);
+	});
 }
 
 const Followers = {
-    Accept,
-    Decline,
-    Get,
-    GetRequests,
+	Accept,
+	Decline,
+	Get,
+	GetRequests,
 };
 
 export default Followers;

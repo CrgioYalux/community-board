@@ -1,10 +1,10 @@
 import type { PoolConnection } from 'mysql2';
 
 enum CommonOperationQuery {
-    CheckIfAlreadySavedByAffiliateID = `
+	CheckIfAlreadySavedByAffiliateID = `
         SELECT * FROM post_saved ps WHERE ps.post_id = ? AND ps.affiliate_id = ?
     `,
-    CheckIfValidAffiliateByID = `
+	CheckIfValidAffiliateByID = `
         SELECT
             e.id AS entity_id,
             a.id AS affiliate_id,
@@ -23,198 +23,298 @@ enum CommonOperationQuery {
         LIMIT 1
     `,
 
-    CreateEntity = `INSERT INTO entity VALUES ()`,
-    CreateAffiliate = `INSERT INTO affiliate (entity_id) VALUES (?)`,
+	CreateEntity = `INSERT INTO entity VALUES ()`,
+	CreateAffiliate = `INSERT INTO affiliate (entity_id) VALUES (?)`,
 
-    DeleteEntity = `UPDATE entity e SET e.is_active = 0 WHERE e.id = ?`,
+	DeleteEntity = `UPDATE entity e SET e.is_active = 0 WHERE e.id = ?`,
 
-    GetAffiliateFollowRequests = `
+	GetAffiliateFollowRequests = `
         SELECT 
             *
         FROM affiliate_follow_requests afr
         WHERE afr.consultant_affiliate_id = ?
     `,
-};
+}
 
 interface CommonOperation {
-    CheckIfAlreadySavedByAffiliateID: {
-        Action: (
-            pool: PoolConnection,
-            payload: Pick<Post, 'post_id'> & Pick<Affiliate, 'affiliate_id'>,
-        ) => Promise<SelectQueryActionReturn<Pick<Post, 'post_id'> & Pick<Affiliate, 'affiliate_id'>>>;
-        QueryReturnType: EffectlessQueryResult<Pick<Post, 'post_id'> & Pick<Affiliate, 'affiliate_id'>>;
-    };
-    CheckIfValidAffiliateByID: {
-        Action: (
-            pool: PoolConnection,
-            payload: Pick<Affiliate, 'affiliate_id'>,
-        ) => Promise<SelectQueryActionReturn<Pick<Member, 'is_active' | 'entity_id' | 'affiliate_id' | 'is_member' | 'is_board' | 'has_description' | 'is_private'>>>;
-        QueryReturnType: EffectlessQueryResult<Pick<Member, 'is_active' | 'entity_id' | 'affiliate_id' | 'is_member' | 'is_board' | 'has_description' | 'is_private'>>;
-    };
+	CheckIfAlreadySavedByAffiliateID: {
+		Action: (
+			pool: PoolConnection,
+			payload: Pick<Post, 'post_id'> & Pick<Affiliate, 'affiliate_id'>
+		) => Promise<
+			SelectQueryActionReturn<
+				Pick<Post, 'post_id'> & Pick<Affiliate, 'affiliate_id'>
+			>
+		>;
+		QueryReturnType: EffectlessQueryResult<
+			Pick<Post, 'post_id'> & Pick<Affiliate, 'affiliate_id'>
+		>;
+	};
+	CheckIfValidAffiliateByID: {
+		Action: (
+			pool: PoolConnection,
+			payload: Pick<Affiliate, 'affiliate_id'>
+		) => Promise<
+			SelectQueryActionReturn<
+				Pick<
+					Member,
+					| 'is_active'
+					| 'entity_id'
+					| 'affiliate_id'
+					| 'is_member'
+					| 'is_board'
+					| 'has_description'
+					| 'is_private'
+				>
+			>
+		>;
+		QueryReturnType: EffectlessQueryResult<
+			Pick<
+				Member,
+				| 'is_active'
+				| 'entity_id'
+				| 'affiliate_id'
+				| 'is_member'
+				| 'is_board'
+				| 'has_description'
+				| 'is_private'
+			>
+		>;
+	};
 
-    CreateEntity: {
-        Action: (
-            pool: PoolConnection,
-        ) => Promise<InsertionQueryActionReturn<Pick<Entity, 'entity_id'>>>;
-        QueryReturnType: EffectfulQueryResult;
-    };
-    CreateAffiliate: {
-        Action: (
-            pool: PoolConnection,
-            payload: Pick<Affiliate, 'entity_id'>,
-        ) => Promise<InsertionQueryActionReturn<Pick<Affiliate, 'entity_id' | 'affiliate_id'>>>;
-        QueryReturnType: EffectfulQueryResult;
-    };
+	CreateEntity: {
+		Action: (
+			pool: PoolConnection
+		) => Promise<InsertionQueryActionReturn<Pick<Entity, 'entity_id'>>>;
+		QueryReturnType: EffectfulQueryResult;
+	};
+	CreateAffiliate: {
+		Action: (
+			pool: PoolConnection,
+			payload: Pick<Affiliate, 'entity_id'>
+		) => Promise<
+			InsertionQueryActionReturn<
+				Pick<Affiliate, 'entity_id' | 'affiliate_id'>
+			>
+		>;
+		QueryReturnType: EffectfulQueryResult;
+	};
 
-    DeleteEntity: {
-        Action: (
-            pool: PoolConnection,
-            payload: Pick<Member, 'entity_id'>,
-        ) => Promise<DeleteQueryActionReturn>;
-        QueryReturnType: EffectfulQueryResult;
-    };
+	DeleteEntity: {
+		Action: (
+			pool: PoolConnection,
+			payload: Pick<Member, 'entity_id'>
+		) => Promise<DeleteQueryActionReturn>;
+		QueryReturnType: EffectfulQueryResult;
+	};
 
-    GetAffiliateFollowRequests: {
-        Action: (
-            pool: PoolConnection,
-            payload: Pick<ViewAffiliateFollowRequests, 'consultant_affiliate_id'>,
-        ) => Promise<SelectQueryActionReturn<Array<ViewAffiliateFollowRequests>>>;
-        QueryReturnType: EffectlessQueryResult<ViewAffiliateFollowRequests>;
-    };
-};
+	GetAffiliateFollowRequests: {
+		Action: (
+			pool: PoolConnection,
+			payload: Pick<
+				ViewAffiliateFollowRequests,
+				'consultant_affiliate_id'
+			>
+		) => Promise<
+			SelectQueryActionReturn<Array<ViewAffiliateFollowRequests>>
+		>;
+		QueryReturnType: EffectlessQueryResult<ViewAffiliateFollowRequests>;
+	};
+}
 
-const CheckIfAlreadySavedByAffiliateID: CommonOperation['CheckIfAlreadySavedByAffiliateID']['Action'] = (pool, payload) => {
-    return new Promise((resolve, reject) => {
-        pool.query(CommonOperationQuery.CheckIfAlreadySavedByAffiliateID, [payload.post_id, payload.affiliate_id], (err, results) => {
-            if (err) {
-                reject({ checkIfAlreadySavedByAffiliateIDError: err });
-                return;
-            }
+const CheckIfAlreadySavedByAffiliateID: CommonOperation['CheckIfAlreadySavedByAffiliateID']['Action'] =
+	(pool, payload) => {
+		return new Promise((resolve, reject) => {
+			pool.query(
+				CommonOperationQuery.CheckIfAlreadySavedByAffiliateID,
+				[payload.post_id, payload.affiliate_id],
+				(err, results) => {
+					if (err) {
+						reject({ checkIfAlreadySavedByAffiliateIDError: err });
+						return;
+					}
 
-            const parsed = results as CommonOperation['CheckIfAlreadySavedByAffiliateID']['QueryReturnType'];
+					const parsed =
+						results as CommonOperation['CheckIfAlreadySavedByAffiliateID']['QueryReturnType'];
 
-            if (!parsed.length) {
-                resolve({ found: false, message: 'Could not find a relation between the post and the affiliate' });
-                return;
-            }
+					if (!parsed.length) {
+						resolve({
+							found: false,
+							message:
+								'Could not find a relation between the post and the affiliate',
+						});
+						return;
+					}
 
-            resolve({ found: true, payload });
-        });
-    });
-};
+					resolve({ found: true, payload });
+				}
+			);
+		});
+	};
 
-const CheckIfValidAffiliateByID: CommonOperation['CheckIfValidAffiliateByID']['Action'] = (pool, payload) => {
-    return new Promise((resolve, reject) => {
-        if (payload.affiliate_id < 0) {
-            resolve({ found: false, message: '' });
-            return;
-        }
+const CheckIfValidAffiliateByID: CommonOperation['CheckIfValidAffiliateByID']['Action'] =
+	(pool, payload) => {
+		return new Promise((resolve, reject) => {
+			if (payload.affiliate_id < 0) {
+				resolve({ found: false, message: '' });
+				return;
+			}
 
-        pool.query(CommonOperationQuery.CheckIfValidAffiliateByID, [payload.affiliate_id], (err, results) => {
-            if (err) {
-                reject({ checkIfValidAffiliateByIDError: err });
-                return;
-            }
+			pool.query(
+				CommonOperationQuery.CheckIfValidAffiliateByID,
+				[payload.affiliate_id],
+				(err, results) => {
+					if (err) {
+						reject({ checkIfValidAffiliateByIDError: err });
+						return;
+					}
 
-            const parsed = results as CommonOperation['CheckIfValidAffiliateByID']['QueryReturnType'];
+					const parsed =
+						results as CommonOperation['CheckIfValidAffiliateByID']['QueryReturnType'];
 
-            if (!parsed.length) {
-                resolve({ found: false, message: 'Could not find a member or board with that ID' });
-                return;
-            }
+					if (!parsed.length) {
+						resolve({
+							found: false,
+							message:
+								'Could not find a member or board with that ID',
+						});
+						return;
+					}
 
-            resolve({ found: true, payload: parsed[0] });
-        });
-    });
-};
+					resolve({ found: true, payload: parsed[0] });
+				}
+			);
+		});
+	};
 
 const CreateEntity: CommonOperation['CreateEntity']['Action'] = (pool) => {
-    return new Promise((resolve, reject) => {
-        pool.query(CommonOperationQuery.CreateEntity, (err, results) => {
-            if (err) {
-                reject({ createEntityError: err });
-                return;
-            }
+	return new Promise((resolve, reject) => {
+		pool.query(CommonOperationQuery.CreateEntity, (err, results) => {
+			if (err) {
+				reject({ createEntityError: err });
+				return;
+			}
 
-            const parsed = results as CommonOperation['CreateEntity']['QueryReturnType'];
+			const parsed =
+				results as CommonOperation['CreateEntity']['QueryReturnType'];
 
-            if (!parsed.affectedRows) {
-                resolve({ done: false, message: 'Could not create the entity' });
-                return;
-            }
+			if (!parsed.affectedRows) {
+				resolve({
+					done: false,
+					message: 'Could not create the entity',
+				});
+				return;
+			}
 
-            resolve({ done: true, payload: { entity_id: parsed.insertId } });
-        });
-    });
+			resolve({ done: true, payload: { entity_id: parsed.insertId } });
+		});
+	});
 };
 
-const CreateAffiliate: CommonOperation['CreateAffiliate']['Action'] = (pool, payload) => {
-    return new Promise((resolve, reject) => {
-        pool.query(CommonOperationQuery.CreateAffiliate, [payload.entity_id], (err, results) => {
-            if (err) {
-                reject({ createAffiliateError: err });
-                return;
-            }
+const CreateAffiliate: CommonOperation['CreateAffiliate']['Action'] = (
+	pool,
+	payload
+) => {
+	return new Promise((resolve, reject) => {
+		pool.query(
+			CommonOperationQuery.CreateAffiliate,
+			[payload.entity_id],
+			(err, results) => {
+				if (err) {
+					reject({ createAffiliateError: err });
+					return;
+				}
 
-            const parsed = results as CommonOperation['CreateAffiliate']['QueryReturnType'];
+				const parsed =
+					results as CommonOperation['CreateAffiliate']['QueryReturnType'];
 
-            if (!parsed.affectedRows) {
-                resolve({ done: false, message: 'Could not create the affiliate' });
-                return;
-            }
+				if (!parsed.affectedRows) {
+					resolve({
+						done: false,
+						message: 'Could not create the affiliate',
+					});
+					return;
+				}
 
-            resolve({ done: true, payload: { entity_id: payload.entity_id, affiliate_id: parsed.insertId } });
-        });
-    });
+				resolve({
+					done: true,
+					payload: {
+						entity_id: payload.entity_id,
+						affiliate_id: parsed.insertId,
+					},
+				});
+			}
+		);
+	});
 };
 
-const DeleteEntity: CommonOperation['DeleteEntity']['Action'] = (pool, payload) => {
-    return new Promise((resolve, reject) => {
-        pool.query(CommonOperationQuery.DeleteEntity, [payload.entity_id], (err, results) => {
-            if (err) {
-                reject({ deleteEntityError: err });
-                return;
-            }
+const DeleteEntity: CommonOperation['DeleteEntity']['Action'] = (
+	pool,
+	payload
+) => {
+	return new Promise((resolve, reject) => {
+		pool.query(
+			CommonOperationQuery.DeleteEntity,
+			[payload.entity_id],
+			(err, results) => {
+				if (err) {
+					reject({ deleteEntityError: err });
+					return;
+				}
 
-            const parsed = results as CommonOperation['DeleteEntity']['QueryReturnType'];
+				const parsed =
+					results as CommonOperation['DeleteEntity']['QueryReturnType'];
 
-            if (!parsed.changedRows) {
-                resolve({ done: false, message: 'Could not find an entity with that ID' });
-                return;
-            }
+				if (!parsed.changedRows) {
+					resolve({
+						done: false,
+						message: 'Could not find an entity with that ID',
+					});
+					return;
+				}
 
-            resolve({ done: true });
-        });
-    });
+				resolve({ done: true });
+			}
+		);
+	});
 };
 
-const GetAffiliateFollowRequests: CommonOperation['GetAffiliateFollowRequests']['Action'] = (pool, payload) => {
-    return new Promise((resolve, reject) => {
-        pool.query(CommonOperationQuery.GetAffiliateFollowRequests, [payload.consultant_affiliate_id], (err, results) => {
-            if (err) {
-                reject({ getFollowRequestsError: err });
-                return;
-            }
+const GetAffiliateFollowRequests: CommonOperation['GetAffiliateFollowRequests']['Action'] =
+	(pool, payload) => {
+		return new Promise((resolve, reject) => {
+			pool.query(
+				CommonOperationQuery.GetAffiliateFollowRequests,
+				[payload.consultant_affiliate_id],
+				(err, results) => {
+					if (err) {
+						reject({ getFollowRequestsError: err });
+						return;
+					}
 
-            const parsed = results as CommonOperation['GetAffiliateFollowRequests']['QueryReturnType'];
+					const parsed =
+						results as CommonOperation['GetAffiliateFollowRequests']['QueryReturnType'];
 
-            if (!parsed.length) {
-                resolve({ found: false, message: 'No follow requests found' });
-                return;
-            }
+					if (!parsed.length) {
+						resolve({
+							found: false,
+							message: 'No follow requests found',
+						});
+						return;
+					}
 
-            resolve({ found: true, payload: parsed });
-        });
-    });
-};
+					resolve({ found: true, payload: parsed });
+				}
+			);
+		});
+	};
 
 const Common = {
-    CheckIfAlreadySavedByAffiliateID,
-    CheckIfValidAffiliateByID,
-    CreateEntity,
-    CreateAffiliate,
-    DeleteEntity,
-    GetAffiliateFollowRequests,
+	CheckIfAlreadySavedByAffiliateID,
+	CheckIfValidAffiliateByID,
+	CreateEntity,
+	CreateAffiliate,
+	DeleteEntity,
+	GetAffiliateFollowRequests,
 };
 
 export default Common;

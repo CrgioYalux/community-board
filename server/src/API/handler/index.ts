@@ -8,14 +8,14 @@ import Posts from './posts';
 import Feed from './feed';
 
 const Handler = {
-    Pong,
-    Auth,
-    Members,
-    Affiliates,
-    Followers,
-    Followees,
-    Posts,
-    Feed,
+	Pong,
+	Auth,
+	Members,
+	Affiliates,
+	Followers,
+	Followees,
+	Posts,
+	Feed,
 };
 
 export default Handler;

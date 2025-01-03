@@ -5,164 +5,214 @@ import db from '../../db';
 import Helper from '../../helper';
 import Handler from './index';
 
-function Login(request: Request<{}, {}, MemberLogin>, response: Response, next: NextFunction): void {
-    if (request.body.username === undefined || request.body.password === undefined) {
-        response.status(400).send({ message: 'There\'s empty required fields' });
-        return;
-    }
+function Login(
+	request: Request<{}, {}, MemberLogin>,
+	response: Response,
+	next: NextFunction
+): void {
+	if (
+		request.body.username === undefined ||
+		request.body.password === undefined
+	) {
+		response.status(400).send({ message: "There's empty required fields" });
+		return;
+	}
 
-    db.pool.getConnection((err, connection) => {
-        if (err) {
-            connection.release();
-            
-            const error = new Error('Could not connect to database');
-            next(error);
+	db.pool.getConnection((err, connection) => {
+		if (err) {
+			connection.release();
 
-            return;
-        }
+			const error = new Error('Could not connect to database');
+			next(error);
 
-        Controller.Members.CheckIfCredentialsMatch(connection, request.body)
-        .then((res) => {
-            if (!res.found) {
-                connection.release();
+			return;
+		}
 
-                response.status(401).send({ authenticated: false, message: res.message });
-                return;
-            }
+		Controller.Members.CheckIfCredentialsMatch(connection, request.body)
+			.then((res) => {
+				if (!res.found) {
+					connection.release();
 
-            const access = Helper.generateAccessToken({ ...res.payload, username: request.body.username })
+					response
+						.status(401)
+						.send({ authenticated: false, message: res.message });
+					return;
+				}
 
-            const payload = {
-                ...access,
-                ...res.payload,
-            };
+				const access = Helper.generateAccessToken({
+					...res.payload,
+					username: request.body.username,
+				});
 
-            response.status(200).send({ authenticated: true, payload });
-        })
-        .catch(next);
-    });
+				const payload = {
+					...access,
+					...res.payload,
+				};
+
+				response.status(200).send({ authenticated: true, payload });
+			})
+			.catch(next);
+	});
 }
 
-function ReAuth(request: Request, response: Response, next: NextFunction): void {
-    if (response.locals.session === undefined || response.locals.session.member_id === undefined) {
-        response.status(400).send({ message: 'There\'s empty required fields' });
-        return;
-    }
+function ReAuth(
+	request: Request,
+	response: Response,
+	next: NextFunction
+): void {
+	if (
+		response.locals.session === undefined ||
+		response.locals.session.member_id === undefined
+	) {
+		response.status(400).send({ message: "There's empty required fields" });
+		return;
+	}
 
-    const member_id = response.locals.session.member_id;
-    request.params[0] = member_id;
+	const member_id = response.locals.session.member_id;
+	request.params[0] = member_id;
 
-    Handler.Members.GetByID(request, response, next);
+	Handler.Members.GetByID(request, response, next);
 }
 
-function RegisterMinimal(request: Request<{}, {}, MemberLogin>, response: Response, next: NextFunction): void {
-    if (request.body.username === undefined || request.body.password === undefined) {
-        response.status(400).send({ message: 'There\'s empty required fields' });
-        return;
-    }
+function RegisterMinimal(
+	request: Request<{}, {}, MemberLogin>,
+	response: Response,
+	next: NextFunction
+): void {
+	if (
+		request.body.username === undefined ||
+		request.body.password === undefined
+	) {
+		response.status(400).send({ message: "There's empty required fields" });
+		return;
+	}
 
-    db.pool.getConnection((err, connection) => {
-        if (err) {
-            connection.release();
+	db.pool.getConnection((err, connection) => {
+		if (err) {
+			connection.release();
 
-            const error = new Error('Could not connect to database');
-            next(error);
+			const error = new Error('Could not connect to database');
+			next(error);
 
-            return;
-        }
+			return;
+		}
 
-        Controller.Members.CreateMinimalMember(connection, request.body)
-        .then((res) => {
-            connection.release();
+		Controller.Members.CreateMinimalMember(connection, request.body)
+			.then((res) => {
+				connection.release();
 
-            if (!res.done) {
-                response.status(400).send({ created: false, message: res.message });
-                return;
-            }
+				if (!res.done) {
+					response
+						.status(400)
+						.send({ created: false, message: res.message });
+					return;
+				}
 
-            const access = Helper.generateAccessToken({ ...res.payload, username: request.body.username })
+				const access = Helper.generateAccessToken({
+					...res.payload,
+					username: request.body.username,
+				});
 
-            const payload = {
-                ...access,
-                ...res.payload,
-            };
+				const payload = {
+					...access,
+					...res.payload,
+				};
 
-            response.status(201).send({ created: true, payload });
-        })
-        .catch(next);
-    });
+				response.status(201).send({ created: true, payload });
+			})
+			.catch(next);
+	});
 }
 
-function RegisterDescription(request: Request<Request['params'], {}, Partial<MemberDescription>>, response: Response, next: NextFunction): void {
-    if (response.locals.session === undefined || response.locals.session.member_id === undefined) {
-        response.status(400).send({ message: 'There\'s empty required fields' });
-        return;
-    }
+function RegisterDescription(
+	request: Request<Request['params'], {}, Partial<MemberDescription>>,
+	response: Response,
+	next: NextFunction
+): void {
+	if (
+		response.locals.session === undefined ||
+		response.locals.session.member_id === undefined
+	) {
+		response.status(400).send({ message: "There's empty required fields" });
+		return;
+	}
 
-    const member_id = Number(response.locals.session.member_id);
+	const member_id = Number(response.locals.session.member_id);
 
-    db.pool.getConnection((err, connection) => {
-        if (err) {
-            connection.release();
+	db.pool.getConnection((err, connection) => {
+		if (err) {
+			connection.release();
 
-            const error = new Error('Could not connect to database');
-            next(error);
+			const error = new Error('Could not connect to database');
+			next(error);
 
-            return;
-        }
+			return;
+		}
 
-        Controller.Members.CreateMemberDescription(connection, { member_id, ...request.body })
-        .then((res) => {
-            connection.release();
+		Controller.Members.CreateMemberDescription(connection, {
+			member_id,
+			...request.body,
+		})
+			.then((res) => {
+				connection.release();
 
-            const status = res.done ? 201 : 400;
+				const status = res.done ? 201 : 400;
 
-            response.status(status).send(res);
-            return;
-        })
-        .catch(next);
-    });
+				response.status(status).send(res);
+				return;
+			})
+			.catch(next);
+	});
 }
 
-function RegisterFull(request: Request<{}, {}, MemberLogin & Partial<MemberDescription>>, response: Response, next: NextFunction): void {
-    db.pool.getConnection((err, connection) => {
-        if (err) {
-            connection.release();
+function RegisterFull(
+	request: Request<{}, {}, MemberLogin & Partial<MemberDescription>>,
+	response: Response,
+	next: NextFunction
+): void {
+	db.pool.getConnection((err, connection) => {
+		if (err) {
+			connection.release();
 
-            const error = new Error('Could not connect to database');
-            next(error);
+			const error = new Error('Could not connect to database');
+			next(error);
 
-            return;
-        }
+			return;
+		}
 
-        Controller.Members.CreateFullMember(connection, request.body)
-        .then((res) => {
-            connection.release();
+		Controller.Members.CreateFullMember(connection, request.body)
+			.then((res) => {
+				connection.release();
 
-            if (!res.done) {
-                response.status(400).send({ created: false, message: res.message });
-                return;
-            }
+				if (!res.done) {
+					response
+						.status(400)
+						.send({ created: false, message: res.message });
+					return;
+				}
 
-            const access = Helper.generateAccessToken({ ...res.payload, username: request.body.username })
+				const access = Helper.generateAccessToken({
+					...res.payload,
+					username: request.body.username,
+				});
 
-            const payload = {
-                ...access,
-                ...res.payload,
-            };
+				const payload = {
+					...access,
+					...res.payload,
+				};
 
-            response.status(201).send({ created: true, payload });
-        })
-        .catch(next);
-    });
+				response.status(201).send({ created: true, payload });
+			})
+			.catch(next);
+	});
 }
 
 const Auth = {
-    Login,
-    ReAuth,
-    RegisterMinimal,
-    RegisterDescription,
-    RegisterFull,
+	Login,
+	ReAuth,
+	RegisterMinimal,
+	RegisterDescription,
+	RegisterFull,
 };
 
 export default Auth;

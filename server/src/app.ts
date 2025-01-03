@@ -5,37 +5,37 @@ import API from './API';
 import Middleware from './middleware';
 
 function create() {
-    const app = express();
+	const app = express();
 
-    app.disable('x-powered-by');
-    app.use(express.urlencoded({ extended: true }));
-    app.use(express.json());
-    app.use(cors());
+	app.disable('x-powered-by');
+	app.use(express.urlencoded({ extended: true }));
+	app.use(express.json());
+	app.use(cors());
 
-    // API request handling pipeline
-   
-    app.use(Middleware.Logs);
-    
-    // Unauthed routes
-    app.use(API.Router.Pong);
-    app.use(API.Router.Auth.NonAuthenticated);
-    
-    app.use(Middleware.Auth);
-    
-    // Authed routes
-    app.use(API.Router.Auth.Authenticated);
-    app.use(API.Router.Members);
-    app.use(API.Router.Affiliates);
-    app.use(API.Router.Followers);
-    app.use(API.Router.Followees);
-    app.use(API.Router.Posts);
-    app.use(API.Router.Feed);
-    
-    app.use(Middleware.ErrorHandling);
-    app.use(Middleware.NotFound);
+	// API request handling pipeline
 
-    return app;
-};
+	app.use(Middleware.Logs);
+
+	// Unauthed routes
+	app.use(API.Router.Pong);
+	app.use(API.Router.Auth.NonAuthenticated);
+
+	app.use(Middleware.Auth);
+
+	// Authed routes
+	app.use(API.Router.Auth.Authenticated);
+	app.use(API.Router.Members);
+	app.use(API.Router.Affiliates);
+	app.use(API.Router.Followers);
+	app.use(API.Router.Followees);
+	app.use(API.Router.Posts);
+	app.use(API.Router.Feed);
+
+	app.use(Middleware.ErrorHandling);
+	app.use(Middleware.NotFound);
+
+	return app;
+}
 
 const app = { create };
 

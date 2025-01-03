@@ -8,14 +8,14 @@ import Posts from './posts';
 import Feed from './feed';
 
 const Router = {
-    Pong,
-    Auth,
-    Members,
-    Affiliates,
-    Followers,
-    Followees,
-    Posts,
-    Feed,
+	Pong,
+	Auth,
+	Members,
+	Affiliates,
+	Followers,
+	Followees,
+	Posts,
+	Feed,
 };
 
 export default Router;

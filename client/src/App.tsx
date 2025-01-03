@@ -1,9 +1,7 @@
 import BusinessRouter from './components/BusinessRouter';
 
 const App: React.FC = () => {
-  return (
-    <BusinessRouter />
-  );
-}
+	return <BusinessRouter />;
+};
 
 export default App;

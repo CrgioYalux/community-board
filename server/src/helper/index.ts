@@ -3,28 +3,38 @@ import environment from '../environment';
 
 const expiresIn: string = '1d';
 
-function generateAccessToken(member: Pick<Member, 'entity_id' | 'affiliate_id' | 'member_id' | 'username'>): { token: string, expiresIn: string | number } {
-    const payload: Session = {
-        ...member,
-        expiresIn,
-    };
+function generateAccessToken(
+	member: Pick<
+		Member,
+		'entity_id' | 'affiliate_id' | 'member_id' | 'username'
+	>
+): { token: string; expiresIn: string | number } {
+	const payload: Session = {
+		...member,
+		expiresIn,
+	};
 
-    return { token: jwt.sign(payload, environment.SECRET_KEY, { expiresIn }), expiresIn };
-};
+	return {
+		token: jwt.sign(payload, environment.SECRET_KEY, { expiresIn }),
+		expiresIn,
+	};
+}
 
-const generateRandomNumber = (max: number, min: number = 0): number => Math.floor(Math.random() * (max + 1) + min);
+const generateRandomNumber = (max: number, min: number = 0): number =>
+	Math.floor(Math.random() * (max + 1) + min);
 
 function generateSalt(length: number): string {
-    const salt: string[] = [];
+	const salt: string[] = [];
 
-    if (length !== 0) {
-        const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!?@#$%&^*()[]{}_-+<>";
-        for (let index = 0; index < length; index++) {
-            salt.push(CHARS[generateRandomNumber(CHARS.length - 1)]);
-        }
-    }
-    return salt.join('');
-};
+	if (length !== 0) {
+		const CHARS =
+			'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!?@#$%&^*()[]{}_-+<>';
+		for (let index = 0; index < length; index++) {
+			salt.push(CHARS[generateRandomNumber(CHARS.length - 1)]);
+		}
+	}
+	return salt.join('');
+}
 
 const Helper = { generateAccessToken, generateSalt };
 

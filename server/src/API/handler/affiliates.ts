@@ -3,71 +3,85 @@ import type { Request, Response, NextFunction } from 'express';
 import Controller from '../../controller';
 import db from '../../db';
 
-function Follow(request: Request, response: Response, next: NextFunction): void {
-    if (response.locals.session === undefined || response.locals.session.member_id === undefined) {
-        response.status(400).send({ message: 'There\'s empty required fields' });
-        return;
-    }
+function Follow(
+	request: Request,
+	response: Response,
+	next: NextFunction
+): void {
+	if (
+		response.locals.session === undefined ||
+		response.locals.session.member_id === undefined
+	) {
+		response.status(400).send({ message: "There's empty required fields" });
+		return;
+	}
 
-    db.pool.getConnection((err, connection) => {
-        if (err) {
-            connection.release();
+	db.pool.getConnection((err, connection) => {
+		if (err) {
+			connection.release();
 
-            const error = new Error('Could not connect to database');
-            next(error);
+			const error = new Error('Could not connect to database');
+			next(error);
 
-            return;
-        }
+			return;
+		}
 
-        const payload = {
-            from_member_id: Number(response.locals.session.member_id),
-            to_affiliate_id: Number(request.params[0]),
-        };
+		const payload = {
+			from_member_id: Number(response.locals.session.member_id),
+			to_affiliate_id: Number(request.params[0]),
+		};
 
-        Controller.Members.Follow(connection, payload)
-        .then((res) => {
-            connection.release();
+		Controller.Members.Follow(connection, payload)
+			.then((res) => {
+				connection.release();
 
-            response.status(200).send(res);
-        })
-        .catch(next);
-    });
+				response.status(200).send(res);
+			})
+			.catch(next);
+	});
 }
 
-function Unfollow(request: Request, response: Response, next: NextFunction): void {
-    if (response.locals.session === undefined || response.locals.session.member_id === undefined) {
-        response.status(400).send({ message: 'There\'s empty required fields' });
-        return;
-    }
+function Unfollow(
+	request: Request,
+	response: Response,
+	next: NextFunction
+): void {
+	if (
+		response.locals.session === undefined ||
+		response.locals.session.member_id === undefined
+	) {
+		response.status(400).send({ message: "There's empty required fields" });
+		return;
+	}
 
-    db.pool.getConnection((err, connection) => {
-        if (err) {
-            connection.release();
+	db.pool.getConnection((err, connection) => {
+		if (err) {
+			connection.release();
 
-            const error = new Error('Could not connect to database');
-            next(error);
+			const error = new Error('Could not connect to database');
+			next(error);
 
-            return;
-        }
+			return;
+		}
 
-        const payload = {
-            from_member_id: Number(response.locals.session.member_id),
-            to_affiliate_id: Number(request.params[0]),
-        };
+		const payload = {
+			from_member_id: Number(response.locals.session.member_id),
+			to_affiliate_id: Number(request.params[0]),
+		};
 
-        Controller.Members.DeleteFollowRequest(connection, payload)
-        .then((res) => {
-            connection.release();
+		Controller.Members.DeleteFollowRequest(connection, payload)
+			.then((res) => {
+				connection.release();
 
-            response.status(200).send(res);
-        })
-        .catch(next);
-    });
+				response.status(200).send(res);
+			})
+			.catch(next);
+	});
 }
 
 const Affiliates = {
-    Follow,
-    Unfollow,
+	Follow,
+	Unfollow,
 };
 
 export default Affiliates;

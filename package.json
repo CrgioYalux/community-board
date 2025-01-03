@@ -1,31 +1,39 @@
 {
-  "private": true,
-  "name": "community_board",
-  "description": "A place for communities",
-  "version": "0.0.0",
-  "main": "index.js",
-  "license": "MIT",
-  "workspaces": [
-    "client",
-    "server"
-  ],
-  "scripts": {
-    "dev:client": "yarn --cwd client dev --host",
-    "dev:server": "yarn --cwd server dev",
-    "dev:server:logs": "yarn --cwd server dev:logs",
-    "dev:both": "npm-run-all --parallel dev:server dev:client",
-    "build:client": "yarn --cwd client build",
-    "build:server": "yarn --cwd server build",
-    "build:both": "npm-run-all build:server build:client",
-    "start:server": "yarn --cwd server start",
-    "start:db": "yarn --cwd server db",
-    "start": "npm-run-all build:both start:server"
-  },
-  "devDependencies": {
-    "npm-run-all": "^4.1.5",
-    "typescript": "^5.3.2"
-  },
-  "dependencies": {
-    "cross-env": "^7.0.3"
-  }
+	"private": true,
+	"name": "community_board",
+	"description": "A place for communities",
+	"version": "0.0.0",
+	"main": "index.js",
+	"license": "MIT",
+	"workspaces": [
+		"client",
+		"server"
+	],
+	"scripts": {
+		"dev:client": "yarn --cwd client dev --host",
+		"dev:server": "yarn --cwd server dev",
+		"dev:server:logs": "yarn --cwd server dev:logs",
+		"dev:both": "npm-run-all --parallel dev:server dev:client",
+		"build:client": "yarn --cwd client build",
+		"build:server": "yarn --cwd server build",
+		"build:both": "npm-run-all build:server build:client",
+		"start:server": "yarn --cwd server start",
+		"start:db": "yarn --cwd server db",
+		"start": "npm-run-all build:both start:server",
+		"pretty": "npx prettier . --write",
+		"prepare": "husky"
+	},
+	"devDependencies": {
+		"husky": "^9.1.7",
+		"lint-staged": "^15.3.0",
+		"npm-run-all": "^4.1.5",
+		"prettier": "^3.4.2",
+		"typescript": "^5.3.2"
+	},
+	"dependencies": {
+		"cross-env": "^7.0.3"
+	},
+	"lint-staged": {
+		"**/*": "prettier --write --ignore-unknown"
+	}
 }
